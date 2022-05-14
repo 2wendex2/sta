@@ -1,4 +1,4 @@
-package ru.wendex.sta.position;
+package ru.wendex.sta.langbase;
 
 import java.io.InputStreamReader;
 import java.io.IOException;
