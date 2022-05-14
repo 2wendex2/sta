@@ -30,11 +30,8 @@ public class ScmTokenTest {
 	}
 	
 	@Test
-	public void literalBaseToken() {
-		try {
-			Token token = new Token(Token.STRING_LITERAL, 1, 1, 1, 1);
-		} catch (IllegalArgumentException e) {
-			System.out.println(e);
-		}
+	public void rightStringToken() {
+		Token token = new StringToken(Token.NUMBER_LITERAL, 2, 1, 4, 6, "123");
+		System.out.println(token);
 	}
 }

@@ -40,8 +40,6 @@ public class Token implements ru.wendex.sta.langbase.Token {
 	private int column2;
 	
 	public Token(int tag, int line1, int column1, int line2, int column2) {
-		if (tag == IDENT || tag >= BOOL_LITERAL && tag <= STRING_LITERAL)
-			throw new IllegalArgumentException("Scheme token " + tagName(tag) + " must be inheritor of Token class");
 		if (tag < MIN_TAG || tag > MAX_TAG)
 			throw new IllegalArgumentException("Scheme token tag " + tag + " is not exists");
 		this.tag = tag;
