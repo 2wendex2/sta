@@ -10,18 +10,19 @@ public class Token implements ru.wendex.sta.langbase.Token {
 	public static int UNQUOTE = 5;
 	public static int UNQUOTE_SPLICING = 6;
 	public static int VECTOR_PAREN = 7;
-	public static int BOOL_LITERAL = 8;
-	public static int NUMBER_LITERAL = 9;
-	public static int CHAR_LITERAL = 10;
-	public static int STRING_LITERAL = 11;
-	public static int IMPROPER_PERIOD = 12;
+	public static int NUMBER_LITERAL = 8;
+	public static int CHAR_LITERAL = 9;
+	public static int STRING_LITERAL = 10;
+	public static int TRUE_LITERAL = 11;
+	public static int FALSE_LITERAL = 12;
+	public static int IMPROPER_PERIOD = 13;
 	
 	static int MIN_TAG = -1;
-	static int MAX_TAG = 12;
+	static int MAX_TAG = 13;
 	
 	private static final String[] TAG_NAME =
 		{"IDENT", "LPAREN", "RPAREN", "QUOTE", "QUASIQUOTE", "UNQUOTE", "UNQUOTE_SPLICING", "VECTOR_PAREN",
-		 "BOOL_LITERAL", "NUMBER_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "IMPROPER_PERIOD"};
+		 "NUMBER_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "TRUE_LITERAL", "FALSE_LITERAL", "IMPROPER_PERIOD"};
 	private static final String EOF_NAME = "EOF";
 	
 	public static String tagName(int tag) {
