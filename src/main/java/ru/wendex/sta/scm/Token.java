@@ -1,6 +1,6 @@
 package ru.wendex.sta.scm;
 
-public class Token implements ru.wendex.sta.langbase.Token {
+public class Token {
 	public static int EOF = -1;
 	public static int IDENT = 0;
 	public static int LPAREN = 1;
