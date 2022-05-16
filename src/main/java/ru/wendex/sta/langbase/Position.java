@@ -4,7 +4,8 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 
 public class Position {
-	private int line = 1, column = 1;
+	private int line = 1, column = 0;
+	private int colPrevLine = 0;
 	private InputStreamReader src;
 	private int index = 0;
 	private int nextChar;
@@ -38,12 +39,27 @@ public class Position {
 		return nextChar;
 	}
 	
+	public int prevLine() {
+		if (column == 1)
+			return line - 1;
+		else
+			return line;
+	}
+	
+	public int prevColumn() {
+		if (column == 1)
+			return colPrevLine;
+		else
+			return column - 1;
+	}
+	
 	public void next() throws IOException {
 		if (nextChar == -1)
 			return;
 		int prevChar = nextChar;
 		nextChar = src.read();
 		if (prevChar == LF_CHAR || prevChar == NEL_CHAR || prevChar == LS_CHAR || prevChar == PS_CHAR || prevChar == CR_CHAR && nextChar != LF_CHAR) {
+			colPrevLine = column;
 			column = 1;
 			line++;
 		} else

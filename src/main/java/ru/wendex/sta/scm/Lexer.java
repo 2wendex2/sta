@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import ru.wendex.sta.langbase.LexicError;
 import ru.wendex.sta.langbase.Position;
+import ru.wendex.sta.langbase.LexerException;
 import ru.wendex.sta.scm.Token;
 import java.io.IOException;
 
@@ -60,11 +61,11 @@ public class Lexer {
 	}
 	
 	private void addLexicError() {
-		LexicError le = new LexicError(lineb, columnb, pos.getLine(), pos.getColumn() - 1, sb.toString());
+		LexicError le = new LexicError(lineb, columnb, pos.prevLine(), pos.prevColumn(), sb.toString());
 		errs.add(le);
 	}
 	
-	private void tokenizeStringChar() {
+	private void tokenizeStringChar() throws IOException {
 		int c = pos.peek();
 		sb.appendCodePoint(c);
 		if (c == (int)'\\') {
@@ -72,9 +73,9 @@ public class Lexer {
 			int c2 = pos.peek();
 			if (c2 != Position.EOF_CHAR) {
 				sb.appendCodePoint(c2);
-				pos.next();
 			}
 		}
+		pos.next();
 	}
 	
 	private void tokenizeStringSequence() throws IOException {
@@ -98,10 +99,11 @@ public class Lexer {
 	}
 	
 	private void sbtokenizeString() {
-		nextToken = new StringToken(Token.STRING, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString());
+		nextToken = new StringToken(Token.STRING_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString());
 	}
 	
-	private void tokenizeSequenceForce() {
+	private void tokenizeSequenceForce() throws IOException {
+		int c = pos.peek();
 		for (;;) {
 			if (isSeparator(c))
 				break;
@@ -111,11 +113,11 @@ public class Lexer {
 		}
 	}
 	
-	private void tokenizeSequence() {
+	private void tokenizeSequence() throws IOException {
 		int c0 = pos.peek();
 		pos.next();
 		int c = pos.peek();
-		if (c0 == (int)'#' && c = (int)'(') {
+		if (c0 == (int)'#' && c == (int)'(') {
 			nextToken = new Token(Token.VECTOR_PAREN, lineb, columnb, pos.getLine(), pos.getColumn());
 			pos.next();
 			return;
@@ -126,7 +128,7 @@ public class Lexer {
 		sbtokenizeSequence();
 	}
 	
-	private void sbtokenizeSequence() {
+	private void sbtokenizeSequence() throws IOException {
 		int c0 = sb.codePointAt(0);
 		if (isInitial(c0))
 			sbtokenizeIdent();
@@ -136,12 +138,12 @@ public class Lexer {
 			if (sb.length() == 1)
 				nextToken = new Token(Token.IMPROPER_PERIOD, lineb, columnb, pos.getLine(), pos.getColumn() - 1);
 			else if (sb.length() == 3 && sb.codePointAt(1) == (int)'.' && sb.codePointAt(2) == (int)'.')
-				sbtokenizeIdent();
+				nextToken = new StringToken(Token.IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString());
 			else
 				sbtokenizeNumber();
 		} else if (c0 == (int)'+' || c0 == (int)'-') {
 			if (sb.length() == 1)
-				sbtokenizeIdent();
+				nextToken = new StringToken(Token.IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString());
 			else
 				sbtokenizeNumber();
 		} else if (c0 == (int)'#') {
@@ -155,15 +157,16 @@ public class Lexer {
 					nextToken = new Token(Token.FALSE_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn() - 1);
 				else if (c1 == (int)'t')
 					nextToken = new Token(Token.TRUE_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn() - 1);
-				else if (c1 == (int)'\\') {
-					if (sb.length() == 2) {
-						int c2 = pos.peek();
-						sb.appendCodePoint(c2);
-						pos.next();
-					}
-					nextToken = new StringToken(Token.CHAR_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn() - 1, sb.toString());
-				} else
-					sbtokenizeNumber();
+			}
+			if (c1 == (int)'\\') {
+				if (sb.length() == 2) {
+					int c2 = pos.peek();
+					sb.appendCodePoint(c2);
+					pos.next();
+				}
+				nextToken = new StringToken(Token.CHAR_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn() - 1, sb.toString());
+			} else {
+				sbtokenizeNumber();
 			}
 		}
 	}
@@ -221,7 +224,7 @@ public class Lexer {
 		}
 		
 		int c2 = sb.codePointAt(2);
-		if (c0 != (int)'#') {
+		if (c2 != (int)'#') {
 			sbi = 2;
 			sbtokenizeNumRadix(radix);
 			return;
@@ -248,7 +251,7 @@ public class Lexer {
 				return;
 			}
 		} else {
-			if ((c3 != (int)'i' || c3 != (int)'I') && (c3 != (int)'e' || c3 != (int)'E')) {
+			if (c3 != (int)'i' && c3 != (int)'I' && c3 != (int)'e' && c3 != (int)'E') {
 				addLexicError();
 				return;
 			}	
@@ -259,63 +262,75 @@ public class Lexer {
 	
 	
 	private void sbtokenizeNumRadix(int radix) {
-		int c0 = sb.codePointAt(sbi);
-		boolean imaginaryAllowed = false;
-		if (c0 == (int)'+' || c0 == (int)'-') {
+		try {
+			int c0 = sb.codePointAt(sbi);
+			boolean imaginaryAllowed = false;
+			if (c0 == (int)'+' || c0 == (int)'-') {
+				sbi++;
+				if (sbi >= sb.length()) {
+					addLexicError();
+					return;
+				}
+				int c1 = sb.codePointAt(sbi);
+				if ((c1 == (int)'i' || c1 == (int)'I') && sbi + 1 == sb.length()) {
+					nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
+					return;
+				}
+				imaginaryAllowed = true;
+			}
+
+			sbtokenizeUreal(radix);
+			if (sbi == sb.length()) {
+				nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
+				return;
+			}
+			if (imaginaryAllowed) {
+				int c1 = sb.codePointAt(sbi);
+				if ((c1 == (int)'i' || c1 == (int)'I') && sbi + 1 == sb.length()) {
+					nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
+					return;
+				}
+			}
+
+			c0 = sb.codePointAt(sbi);
+			if (c0 != (int)'+' && c0 != (int)'-') {
+				addLexicError();
+				return;
+			}
 			sbi++;
 			if (sbi >= sb.length()) {
 				addLexicError();
 				return;
 			}
-			int c1 = sb.codePointAt(sbi);
-			if ((c1 == (int)'i' || c1 == (int)'I') && sbi + 1 == sb.length()) {
+			
+			int cj = sb.codePointAt(sbi);
+			if ((cj == (int)'i' || cj == (int)'I') && sbi + 1 == sb.length()) {
 				nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
 				return;
 			}
-			imaginaryAllowed = true;
-		}
-		
-		sbtokenizeUreal(radix);
-		if (sbi == sb.length()) {
-			nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
-			return;
-		}
-		if (imaginaryAllowed) {
-			int c1 = sb.codePointAt(sbi);
-			if ((c1 == (int)'i' || c1 == (int)'I') && sbi + 1 == sb.length()) {
+			
+			sbtokenizeUreal(radix);
+			if (sbi >= sb.length()) {
+				addLexicError();
+				return;
+			}
+
+			int ci = sb.codePointAt(sbi);
+			if ((ci == (int)'i' || ci == (int)'I') && sbi + 1 == sb.length()) {
 				nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
 				return;
 			}
-		}
-		
-		c0 = sb.codePointAt(sbi);
-		if (c0 != (int)'+' && c0 != (int)'-') {
+
 			addLexicError();
-			return;
-		}
-		sbi++;
-		if (sbi >= sb.length()) {
+		} catch (LexerException e) {
 			addLexicError();
-			return;
 		}
-		sbtokenizeUreal(radix);
-		if (sbi >= sb.length()) {
-			addLexicError();
-			return;
-		}
-		
-		int ci = sb.codePointAt(sbi);
-		if ((ci == (int)'i' || ci == (int)'I') && sbi + 1 == sb.length()) {
-			nextToken = new StringToken(Token.NUMBER_LITERAL, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
-			return;
-		}
-		
-		addLexicError();
 	}
 	
-	private void sbtokenizeUreal(int radix) {
+	private void sbtokenizeUreal(int radix) throws LexerException {
 		int c0 = sb.codePointAt(sbi);
 		if (c0 == (int)'.') {
+			sbi++;
 			sbtokenizeDigitSequence(radix);
 			sbtokenizeOcthotorpSequenceOpt();
 			sbtokenizeSuffix();
@@ -339,6 +354,7 @@ public class Lexer {
 		sbtokenizeOcthotorpSequenceOpt();
 		if (sbi == sb.length())
 			return;
+		c1 = sb.codePointAt(sbi);
 		if (c1 == (int)'.' && isOctPeriod) {
 			sbi++;
 			sbtokenizeOcthotorpSequenceOpt();
@@ -357,19 +373,19 @@ public class Lexer {
 		sbtokenizeSuffix();
 	}
 	
-	private void sbtokenizeDigitSequence(int radix) {
+	private void sbtokenizeDigitSequence(int radix) throws LexerException {
 		int c0 = sb.codePointAt(sbi);
 		if (!isRadixDigit(c0, radix)) {
-			addLexicError();
+			throw new LexerException();
 		}
-		sti++;
+		sbi++;
 		for (;;) {
 			if (sbi == sb.length())
 				break;
 			int c = sb.codePointAt(sbi);
 			if (!isRadixDigit(c, radix))
 				break;
-			sti++;
+			sbi++;
 		}
 	}
 	
@@ -380,7 +396,7 @@ public class Lexer {
 			int c = sb.codePointAt(sbi);
 			if (!isRadixDigit(c, radix))
 				break;
-			sti++;
+			sbi++;
 		}
 	}
 	
@@ -391,35 +407,33 @@ public class Lexer {
 			int c = sb.codePointAt(sbi);
 			if (c != (int)'#')
 				break;
-			sti++;
+			sbi++;
 		}
 	}
 	
-	private void sbtokenizeSuffix() {
+	private void sbtokenizeSuffix() throws LexerException {
 		if (sbi == sb.length())
-			break;
+			return;
 		int c = sb.codePointAt(sbi);
-		if (c != (int)'e' || c != (int)'s' || c != (int)'f' || c != (int)'d' || c != (int)'l' ||
-		    c != (int)'E' || c != (int)'S' || c != (int)'F' || c != (int)'D' || c != (int)'L')
-			break;
+		if (c != (int)'e' && c != (int)'s' && c != (int)'f' && c != (int)'d' && c != (int)'l' &&
+		    c != (int)'E' && c != (int)'S' && c != (int)'F' && c != (int)'D' && c != (int)'L')
+			return;
 		sbi++;
 		if (sbi == sb.length()) {
-			addLexicError();
-			break;
+			throw new LexerException();
 		}
 		c = sb.codePointAt(sbi);
 		if (c == (int)'+' || c == (int)'-') {
 			sbi++;
 			if (sbi == sb.length()) {
-				addLexicError();
-				break;
+				throw new LexerException();
 			}
 		}
 		sbtokenizeDigitSequence(10);
 	}
 	
 	private boolean isRadixDigit(int c, int radix) {
-		if (c >= (int)'0' && c < radix + (int)radix && c <= (int)'9')
+		if (c >= (int)'0' && c < radix + (int)'0' && c <= (int)'9')
 			return true;
 		int endLetterUp = (int)'A' + radix - 10;
 		int endLetterDown = (int)'a' + radix - 10;
@@ -450,9 +464,7 @@ public class Lexer {
 				pos.next();
 			} else 
 				nextToken = new Token(Token.UNQUOTE, lineb, columnb, lineb, columnb);
-			}
-		}
-		else if (c == (int)'"')
+		} else if (c == (int)'"')
 			tokenizeStringSequence();
 		else if (c == Position.EOF_CHAR)
 			nextToken = new Token(Token.EOF, lineb, columnb, pos.getLine(), pos.getColumn());
