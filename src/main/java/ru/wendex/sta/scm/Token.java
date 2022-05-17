@@ -1,24 +1,24 @@
 package ru.wendex.sta.scm;
 
 public class Token {
-	public static int EOF = -1;
-	public static int IDENT = 0;
-	public static int LPAREN = 1;
-	public static int RPAREN = 2;
-	public static int QUOTE = 3;
-	public static int QUASIQUOTE = 4;
-	public static int UNQUOTE = 5;
-	public static int UNQUOTE_SPLICING = 6;
-	public static int VECTOR_PAREN = 7;
-	public static int NUMBER_LITERAL = 8;
-	public static int CHAR_LITERAL = 9;
-	public static int STRING_LITERAL = 10;
-	public static int TRUE_LITERAL = 11;
-	public static int FALSE_LITERAL = 12;
-	public static int IMPROPER_PERIOD = 13;
+	public static final int EOF = -1;
+	public static final int IDENT = 0;
+	public static final int LPAREN = 1;
+	public static final int RPAREN = 2;
+	public static final int QUOTE = 3;
+	public static final int QUASIQUOTE = 4;
+	public static final int UNQUOTE = 5;
+	public static final int UNQUOTE_SPLICING = 6;
+	public static final int VECTOR_PAREN = 7;
+	public static final int NUMBER_LITERAL = 8;
+	public static final int CHAR_LITERAL = 9;
+	public static final int STRING_LITERAL = 10;
+	public static final int TRUE_LITERAL = 11;
+	public static final int FALSE_LITERAL = 12;
+	public static final int IMPROPER_PERIOD = 13;
 	
-	static int MIN_TAG = -1;
-	static int MAX_TAG = 13;
+	static final int MIN_TAG = -1;
+	static final int MAX_TAG = 13;
 	
 	private static final String[] TAG_NAME =
 		{"IDENT", "LPAREN", "RPAREN", "QUOTE", "QUASIQUOTE", "UNQUOTE", "UNQUOTE_SPLICING", "VECTOR_PAREN",
@@ -32,6 +32,10 @@ public class Token {
 			return EOF_NAME;
 		else
 			return TAG_NAME[tag];
+	}
+	
+	public boolean isObjectToken() {
+		return tag == IDENT || tag == NUMBER_LITERAL || tag == CHAR_LITERAL || tag == STRING_LITERAL || tag == TRUE_LITERAL || tag == FALSE_LITERAL;
 	}
 	
 	private int tag;
@@ -56,5 +60,12 @@ public class Token {
 	
 	public int getTag() {
 		return tag;
+	}
+	
+	public void assignCoordinates(Token token) {
+		line1 = token.line1;
+		column1 = token.column1;
+		line2 = token.line2;
+		column2 = token.column2;
 	}
 }

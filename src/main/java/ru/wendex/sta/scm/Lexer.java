@@ -16,6 +16,12 @@ public class Lexer {
 	private StringBuilder sb;
 	private int sbi;
 	
+	public static Token toIdentToken(String identName, Token srcToken) {
+		StringToken destToken = new StringToken(Token.IDENT, 0, 0, 0, 0, identName);
+		destToken.assignCoordinates(srcToken);
+		return destToken;
+	}
+	
 	public Lexer(Position pos) throws IOException {
 		this.pos = pos;
 		next();
