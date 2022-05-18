@@ -94,19 +94,19 @@ public class Parser {
 				Node car = new SymbolNode(Lexer.toIdentToken("quasiquote", token));
 				lexer.next();
 				Node cdr = parseNode();
-				return new PairNode(car, cdr);
+				return new PairNode(car, new PairNode(cdr, new NullNode()));
 			}
 			case Token.UNQUOTE: {
 				Node car = new SymbolNode(Lexer.toIdentToken("unquote", token));
 				lexer.next();
 				Node cdr = parseNode();
-				return new PairNode(car, cdr);
+				return new PairNode(car, new PairNode(cdr, new NullNode()));
 			}
 			case Token.UNQUOTE_SPLICING: {
 				Node car = new SymbolNode(Lexer.toIdentToken("unquote-splicing", token));
 				lexer.next();
 				Node cdr = parseNode();
-				return new PairNode(car, cdr);
+				return new PairNode(car, new PairNode(cdr, new NullNode()));
 			}
 			case Token.IDENT: {
 				lexer.next();

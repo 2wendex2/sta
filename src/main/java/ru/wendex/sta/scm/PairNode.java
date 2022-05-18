@@ -59,9 +59,65 @@ public class PairNode extends Node {
 				if (!(cdr instanceof PairNode))
 					throw new ParserException("Quote expression must be not null list");
 				return ((PairNode)cdr).quoteExprTail();
+			} else if (op.equals("quasiquote")) {
+				if (!(cdr instanceof PairNode))
+					throw new ParserException("Quasiquote expression must be not null list");
+				return ((PairNode)cdr).quasiquoteExprTail();
+			} else if (op.equals("unquote") || op.equals("unquote-splicing")) {
+				throw new ParserException("Unquote must be in quasiquote");
 			}
 		}
 		unquoteTail();
 		return this;
-	}	
+	}
+	
+	private Node quasiquoteExprTail() throws ParserException {
+		if (!(cdr instanceof NullNode))
+			throw new ParserException("Quasiquote accept 1 parameter");
+		if (car instanceof VectorNode)
+			((VectorNode)car).quasiquote();
+		else if (car instanceof PairNode)
+			return ((PairNode)car).quasiquote();
+		return car;
+	}
+	
+	private Node quasiquote() throws ParserException {
+		if (car instanceof SymbolNode) {
+			String op = ((SymbolNode)car).getValue();
+			if (op.equals("unquote")) {
+				if (!(cdr instanceof PairNode))
+					throw new ParserException("Unquote expression must be not null list");
+				return ((PairNode)cdr).unquoteExprTail();
+			}
+		} else if (car instanceof PairNode) {
+			car = ((PairNode)car).quasiquote();
+		} else if (car instanceof VectorNode){
+			((VectorNode)car).quasiquote();
+		}
+		if (cdr instanceof PairNode) {
+			((PairNode)cdr).quasiquoteTail();
+		} else if (cdr instanceof VectorNode){
+			((VectorNode)cdr).quasiquote();
+		}
+		return this;
+	}
+	
+	private void quasiquoteTail() throws ParserException {
+		if (car instanceof PairNode) {
+			car = ((PairNode)car).quasiquote();
+		} else if (car instanceof VectorNode){
+			((VectorNode)car).quasiquote();
+		}
+		if (cdr instanceof PairNode) {
+			((PairNode)cdr).quasiquoteTail();
+		} else if (cdr instanceof VectorNode){
+			((VectorNode)cdr).quasiquote();
+		}
+	}
+	
+	private Node unquoteExprTail() throws ParserException {
+		if (!(cdr instanceof NullNode))
+			throw new ParserException("Unquote accept 1 parameter");
+		return car.unquote();
+	}
 }

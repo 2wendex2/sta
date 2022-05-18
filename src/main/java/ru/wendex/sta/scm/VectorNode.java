@@ -27,4 +27,13 @@ public class VectorNode extends Node {
 			nodes.set(i, nodes.get(i).unquote());
 		return this;
 	}
+	
+	public void quasiquote() throws ParserException {
+		for (int i = 0; i < nodes.size(); i++) {
+			if (nodes.get(i) instanceof VectorNode)
+				((VectorNode)nodes.get(i)).quasiquote();
+			else if (nodes.get(i) instanceof PairNode)
+				((VectorNode)nodes.get(i)).quasiquote();
+		}
+	}
 }
