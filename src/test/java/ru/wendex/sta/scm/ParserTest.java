@@ -14,8 +14,8 @@ public class ParserTest {
 		FileReader fr = new FileReader("testfiles/pst.txt");
 		Position pos = new Position(fr);
 		Lexer lexer = new Lexer(pos);
-		Pst pst = Parser.parse(lexer);
-		pst.print();
+		Ast ast = Parser.parse(lexer);
+		ast.print();
 		fr.close();
 	}
 }

@@ -1,9 +1,10 @@
 package ru.wendex.sta.scm;
 
 import java.util.ArrayList;
+import ru.wendex.sta.langbase.ParserException;
 
-public interface Node {
-	void printRec(String s, int k);
+public abstract class Node {
+	public abstract void printRec(String s, int k);
 	
 	public static String startPrefix(String s, int k) {
 		if (k == 1) {
@@ -23,5 +24,9 @@ public interface Node {
     		} else {
     			return s;
     		}
+	}
+	
+	public Node unquote() throws ParserException {
+		return this;
 	}
 }

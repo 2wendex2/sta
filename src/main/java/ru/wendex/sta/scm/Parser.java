@@ -13,16 +13,17 @@ public class Parser {
 		this.lexer = lexer;
 	}
 	
-	public static Pst parse(Lexer lexer) throws ParserException, IOException {
+	public static Ast parse(Lexer lexer) throws ParserException, IOException {
 		Parser parser = new Parser(lexer);
-		Pst pst = parser.parsePst();
+		Ast ast = parser.parseAst();
 		if (lexer.peek().getTag() != Token.EOF) {
 			throw new ParserException("Expected end of file\n" + lexer.peek().toString());
 		}
-		return pst;
+		ast.unquote();
+		return ast;
 	}
 	
-	private Pst parsePst() throws ParserException, IOException {
+	private Ast parseAst() throws ParserException, IOException {
 		ArrayList<Node> nodes = new ArrayList<>();
 		for (;;) {
 			Token token = lexer.peek();
@@ -32,7 +33,7 @@ public class Parser {
 			Node node = parseNode();
 			nodes.add(node);
 		}
-		return new Pst(nodes);
+		return new Ast(nodes);
 	}
 	
 	private Node parsePairTail() throws ParserException, IOException {
@@ -84,28 +85,32 @@ public class Parser {
 				}
 				return new VectorNode(nodes);
 			case Token.QUOTE: {
-				Node car = new ObjectNode(Lexer.toIdentToken("quote", token));
+				Node car = new SymbolNode(Lexer.toIdentToken("quote", token));
 				lexer.next();
 				Node cdr = parseNode();
-				return new PairNode(car, cdr);
+				return new PairNode(car, new PairNode(cdr, new NullNode()));
 			}
 			case Token.QUASIQUOTE: {
-				Node car = new ObjectNode(Lexer.toIdentToken("quasiquote", token));
+				Node car = new SymbolNode(Lexer.toIdentToken("quasiquote", token));
 				lexer.next();
 				Node cdr = parseNode();
 				return new PairNode(car, cdr);
 			}
 			case Token.UNQUOTE: {
-				Node car = new ObjectNode(Lexer.toIdentToken("unquote", token));
+				Node car = new SymbolNode(Lexer.toIdentToken("unquote", token));
 				lexer.next();
 				Node cdr = parseNode();
 				return new PairNode(car, cdr);
 			}
 			case Token.UNQUOTE_SPLICING: {
-				Node car = new ObjectNode(Lexer.toIdentToken("unquote-splicing", token));
+				Node car = new SymbolNode(Lexer.toIdentToken("unquote-splicing", token));
 				lexer.next();
 				Node cdr = parseNode();
 				return new PairNode(car, cdr);
+			}
+			case Token.IDENT: {
+				lexer.next();
+				return new SymbolNode(token);
 			}
 			default:
 				if (token.isObjectToken()) {

@@ -21,7 +21,7 @@ public class Token {
 	static final int MAX_TAG = 13;
 	
 	private static final String[] TAG_NAME =
-		{"IDENT", "LPAREN", "RPAREN", "QUOTE", "QUASIQUOTE", "UNQUOTE", "UNQUOTE_SPLICING", "VECTOR_PAREN",
+		{"SYMBOL", "LPAREN", "RPAREN", "QUOTE", "QUASIQUOTE", "UNQUOTE", "UNQUOTE_SPLICING", "VECTOR_PAREN",
 		 "NUMBER_LITERAL", "CHAR_LITERAL", "STRING_LITERAL", "TRUE_LITERAL", "FALSE_LITERAL", "IMPROPER_PERIOD"};
 	private static final String EOF_NAME = "EOF";
 	
