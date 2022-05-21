@@ -19,7 +19,7 @@ public class Parser {
 		if (lexer.peek().getTag() != Token.EOF) {
 			throw new ParserException("Expected end of file\n" + lexer.peek().toString());
 		}
-		ast.unquote();
+		//ast.unquote();
 		return ast;
 	}
 	
