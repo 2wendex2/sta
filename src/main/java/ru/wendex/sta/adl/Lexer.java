@@ -13,7 +13,8 @@ public class Lexer {
 	private ArrayList<LexicError> errs = new ArrayList<>();
 	private int lineb, columnb;
 	private StringBuilder sb;
-	private int sbi;
+	private HashMap<String, Integer> identMap = new HashMap<>();
+	private int identCount = 0;
 	
 	public Lexer(Position pos) throws IOException {
 		this.pos = pos;
@@ -152,7 +153,15 @@ public class Lexer {
 				return;
 			}
 		}
-		nextToken = new StringToken(Token.IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase());
+		String s = sb.toString();
+		Integer i = identMap.get(s);
+		if (i == null) {
+			i = identCount;
+			identCount++;
+			identMap.put(s, i);
+		}
+			
+		nextToken = new IntToken(Token.IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, i);
 	}
 	
 	private void tokenize() throws IOException {
