@@ -42,7 +42,7 @@ public class AdlLexerTest {
 	
 	@Test
 	public void nnumberLex() throws IOException {
-		FileReader fr = new FileReader("testfiles/aulex.txt");
+		FileReader fr = new FileReader("testfiles/au.txt");
 		Position pos = new Position(fr);
 		Lexer lexer = new Lexer(pos);
 		printLexer(lexer);

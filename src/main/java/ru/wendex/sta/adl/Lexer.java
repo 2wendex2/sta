@@ -29,6 +29,10 @@ public class Lexer {
 		return errs;
 	}
 	
+	public int getIdentCount() {
+		return identCount;
+	}
+	
 	private static boolean isLetter(int c) {
 		return c >= (int)'a' && c <= (int)'z' || c >= (int)'A' && c <= (int)'Z';
 	}
@@ -108,26 +112,31 @@ public class Lexer {
 		}
 	}
 	
-	private void sbtokenizeSchemeIdent() {
+	private void sbtokenizeSpecIdent() {
 		int c0 = sb.codePointAt(1);
-		if (!isLetter(c0)) {
+		if (!isLetter(c0) && c0 != (int)'_') {
 			addLexicError();
 			return;
 		}
 		for (int i = 2; i < sb.length(); i++) {
 			int c = sb.codePointAt(i);
 			if (!isLetter(c) && !isDigit(c) && c != (int)'_') {
+				String h = sb.toString();
 				addLexicError();
 				return;
 			}
 		}
-		nextToken = new StringToken(Token.SCHEME_IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase().substring(1));
+		nextToken = new StringToken(Token.SPEC_IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase().substring(1));
 	}
 	
-	private void sbtokenizeSpecIdent() {
+	private void sbtokenizeSchemeIdent() {
 		int c0 = sb.codePointAt(1);
 		if (!isInitial(c0)) {
-			addLexicError();
+			String h = sb.toString();
+			if (h.equals(".+") || h.equals(".-") || h.equals("...."))
+				nextToken = new StringToken(Token.SCHEME_IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase().substring(1));
+			else
+				addLexicError();
 			return;
 		}
 		for (int i = 2; i < sb.length(); i++) {
@@ -137,12 +146,12 @@ public class Lexer {
 				return;
 			}
 		}
-		nextToken = new StringToken(Token.SPEC_IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase().substring(1));
+		nextToken = new StringToken(Token.SCHEME_IDENT, lineb, columnb, pos.getLine(), pos.getColumn()-1, sb.toString().toLowerCase().substring(1));
 	}
 	
 	private void sbtokenizeIdent() {
 		int c0 = sb.codePointAt(0);
-		if (!isLetter(c0)) {
+		if (!isLetter(c0) && c0 != (int)'_') {
 			addLexicError();
 			return;
 		}
@@ -205,8 +214,9 @@ public class Lexer {
 		}
 		else if (c == Position.EOF_CHAR)
 			nextToken = new Token(Token.EOF, lineb, columnb, pos.getLine(), pos.getColumn());
-		else
+		else {
 			tokenizeSequence();
+		}
 	}
 				   
 	private void skipWhitespaces() throws IOException {

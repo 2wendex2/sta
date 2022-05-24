@@ -1,0 +1,12 @@
+def .+ from [
+	.w() -> qw;
+	.t() -> vv;
+	final qw;
+] [
+	.r() -> q;
+	epsilon q -> e;
+	final e;
+] to [
+	final i;
+]
+
