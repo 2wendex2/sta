@@ -29,4 +29,8 @@ public abstract class Node {
 	public Node unquote() throws ParserException {
 		return this;
 	}
+	
+	public void print() {
+		printRec("", 0);
+	}
 }

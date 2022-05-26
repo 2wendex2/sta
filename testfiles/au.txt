@@ -5,6 +5,7 @@ def .+ from [
 ] [
 	.r() -> q;
 	epsilon q -> e;
+	~null() -> e;
 	final e;
 ] to [
 	final i;
