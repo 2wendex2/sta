@@ -1,10 +1,10 @@
 package ru.wendex.sta.adl;
 
-public class EpsilonRule {
+public class AdlEpsilonRule {
 	private int arg;
 	private int res;
 	
-	public EpsilonRule(int arg, int res) {
+	public AdlEpsilonRule(int arg, int res) {
 		this.arg = arg;
 		this.res = res;
 	}

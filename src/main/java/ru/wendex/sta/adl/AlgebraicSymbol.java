@@ -1,6 +1,6 @@
 package ru.wendex.sta.adl;
 
-public class AlgebraicSymbol implements Symbol {
+public class AlgebraicSymbol implements AdlSymbol {
 	private String s;
 	private int arity;
 	

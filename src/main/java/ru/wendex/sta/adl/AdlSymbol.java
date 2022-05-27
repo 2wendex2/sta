@@ -3,7 +3,7 @@ package ru.wendex.sta.adl;
 /**
  * Символ алфавита автомата ADL
  */
-public interface Symbol {
+public interface AdlSymbol {
 	/**
 	 * Возвращает местность символа
 	 * @return местность

@@ -3,8 +3,8 @@ package ru.wendex.sta.aut;
 import java.util.ArrayList;
 
 public class Procedures {
-	public static SchemeAutomata consProc(SchemeAutomata car, SchemeAutomata cdr) {
-		SchemeAutomata pair = car.unionRules(cdr);
+	public static Automata consProc(Automata car, Automata cdr) {
+		Automata pair = car.unionRules(cdr);
 		int finalState = pair.newState();
 		pair.addFinalState(finalState);
 		for (int stateCar : car.getFinalStates())
@@ -17,8 +17,8 @@ public class Procedures {
 		return pair;
 	}
 	
-	private static SchemeAutomata pairElmProc(SchemeAutomata a, int index){
-		SchemeAutomata b = a.cloneRules();
+	private static Automata pairElmProc(Automata a, int index){
+		Automata b = a.cloneRules();
 		for (int resState : a.getFinalStates()) {
 			for (Rule rule : a.getStateRules(resState)) {
 				Symbol symb = rule.getSymbol();
@@ -30,15 +30,15 @@ public class Procedures {
 		return b;
 	}
 	
-	public static SchemeAutomata carProc(SchemeAutomata a) throws NotSupportedProcedureException {
-		SchemeAutomata b = pairElmProc(a, 0);
+	public static Automata carProc(Automata a) throws NotSupportedProcedureException {
+		Automata b = pairElmProc(a, 0);
 		if (b == null)
 			throw new NotSupportedProcedureException("car of not pair");
 		return b;
 	}
 	
-	public static SchemeAutomata cdrProc(SchemeAutomata a) throws NotSupportedProcedureException {
-		SchemeAutomata b = pairElmProc(a, 1);
+	public static Automata cdrProc(Automata a) throws NotSupportedProcedureException {
+		Automata b = pairElmProc(a, 1);
 		if (b == null)
 			throw new NotSupportedProcedureException("cdr of not pair");
 		return b;

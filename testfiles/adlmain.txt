@@ -1,0 +1,16 @@
+def .+ from [
+	.w() -> qw;
+	.t() -> vv;
+	final qw;
+] [
+	.r() -> q;
+	epsilon q -> e;
+	~null() -> e;
+	final e;
+] to [
+	.y(w e r) -> f;
+	.t() -> e;
+	final i e;
+	epsilon w -> p;
+]
+

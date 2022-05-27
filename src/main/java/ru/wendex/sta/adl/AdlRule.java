@@ -2,18 +2,18 @@ package ru.wendex.sta.adl;
 
 import java.util.ArrayList;
 
-public class Rule {
-	private Symbol symbol;
+public class AdlRule {
+	private AdlSymbol symbol;
 	private ArrayList<Integer> args;
 	private int res;
 	
-	public Rule(Symbol symbol, ArrayList<Integer> args, int res) {
+	public AdlRule(AdlSymbol symbol, ArrayList<Integer> args, int res) {
 		this.symbol = symbol;
 		this.args = args;
 		this.res = res;
 	}
 	
-	public Symbol getSymbol() {
+	public AdlSymbol getSymbol() {
 		return symbol;
 	}
 

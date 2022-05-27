@@ -1,17 +1,16 @@
 package ru.wendex.sta.aut;
 
 import java.util.ArrayList;
-import ru.wendex.sta.langbase.ParserException;
 import java.util.Iterator;
 import java.util.HashSet;
 
-public class SchemeAutomata implements Cloneable {
+public class Automata implements Cloneable {
 	private ArrayList<Rule> rules;
 	private ArrayList<Integer> finalStates;
 	private ArrayList<EpsilonRule> epsilonRules;
 	private int stateCount;
 	
-	public SchemeAutomata() {}
+	public Automata() {}
 	
 	public static void epsilonClosure(ArrayList<Integer> states, ArrayList<EpsilonRule> epsilonRules) {
 		HashSet<Integer> clsSet = new HashSet<>();
@@ -30,8 +29,8 @@ public class SchemeAutomata implements Cloneable {
 		}
 	}
 	
-	public static SchemeAutomata createEmpty() {
-		SchemeAutomata a = new SchemeAutomata();
+	public static Automata createEmpty() {
+		Automata a = new Automata();
 		a.rules = new ArrayList<>();
 		a.finalStates = new ArrayList<>();
 		a.epsilonRules = new ArrayList<>();
@@ -40,15 +39,15 @@ public class SchemeAutomata implements Cloneable {
 	}
 	
 	public Object clone() {
-		SchemeAutomata a = new SchemeAutomata();
+		Automata a = new Automata();
 		a.rules = (ArrayList<Rule>)rules.clone();
 		a.finalStates = (ArrayList<Integer>)finalStates.clone();
 		a.stateCount = stateCount;
 		return a;
 	}
 	
-	public SchemeAutomata cloneRules() {
-		SchemeAutomata a = new SchemeAutomata();
+	public Automata cloneRules() {
+		Automata a = new Automata();
 		a.rules = (ArrayList<Rule>)rules.clone();
 		a.stateCount = stateCount;
 		a.finalStates = new ArrayList<>();
@@ -103,8 +102,8 @@ public class SchemeAutomata implements Cloneable {
 		};
 	}
 	
-	public SchemeAutomata unionRules(SchemeAutomata a) {
-		SchemeAutomata r = SchemeAutomata.createEmpty();
+	public Automata unionRules(Automata a) {
+		Automata r = Automata.createEmpty();
 		r.rules = (ArrayList<Rule>)rules.clone();
 		r.stateCount = stateCount + a.stateCount;
 		
@@ -137,5 +136,7 @@ public class SchemeAutomata implements Cloneable {
 		System.out.println();
 	}
 	
-	
+	public void addEpsilonRule(EpsilonRule epsilonRule) {
+		epsilonRules.add(epsilonRule);
+	}
 }

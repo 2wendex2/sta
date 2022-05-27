@@ -12,9 +12,9 @@ public class AutTest {
 		
 		Scanner sc = new Scanner(fr);
 	
-		SchemeAutomata aut1 = readAutomata(sc);
-		SchemeAutomata aut2 = readAutomata(sc);
-		SchemeAutomata aut = Procedures.consProc(aut1, aut2);
+		Automata aut1 = readAutomata(sc);
+		Automata aut2 = readAutomata(sc);
+		Automata aut = Procedures.consProc(aut1, aut2);
 		aut.print();
 		
 		fr.close();
@@ -26,8 +26,8 @@ public class AutTest {
 		
 		Scanner sc = new Scanner(fr);
 	
-		SchemeAutomata aut1 = readAutomata(sc);
-		SchemeAutomata aut = Procedures.carProc(aut1);
+		Automata aut1 = readAutomata(sc);
+		Automata aut = Procedures.carProc(aut1);
 		aut1.print();
 		aut.print();
 		
@@ -40,16 +40,16 @@ public class AutTest {
 		
 		Scanner sc = new Scanner(fr);
 	
-		SchemeAutomata aut1 = readAutomata(sc);
-		SchemeAutomata aut = Procedures.cdrProc(aut1);
+		Automata aut1 = readAutomata(sc);
+		Automata aut = Procedures.cdrProc(aut1);
 		aut1.print();
 		aut.print();
 		
 		fr.close();
 	}
 	
-	public SchemeAutomata readAutomata(Scanner sc) throws IOException {
-		SchemeAutomata aut = SchemeAutomata.createEmpty();
+	public Automata readAutomata(Scanner sc) throws IOException {
+		Automata aut = Automata.createEmpty();
 		int rlsNumber = sc.nextInt();
 		int maxState = 0;
 		

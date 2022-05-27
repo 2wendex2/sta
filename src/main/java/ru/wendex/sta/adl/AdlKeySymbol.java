@@ -1,12 +1,12 @@
 package ru.wendex.sta.adl;
 
-public enum KeySymbol implements Symbol {
+public enum AdlKeySymbol implements AdlSymbol {
 	NULL(0, "~null");
 	
 	private int arity;
 	private String name;
 	
-	KeySymbol(int arity, String name) {
+	AdlKeySymbol(int arity, String name) {
 		this.arity = arity;
 		this.name = name;
 	}
