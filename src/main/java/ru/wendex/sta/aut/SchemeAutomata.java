@@ -3,18 +3,38 @@ package ru.wendex.sta.aut;
 import java.util.ArrayList;
 import ru.wendex.sta.langbase.ParserException;
 import java.util.Iterator;
+import java.util.HashSet;
 
 public class SchemeAutomata implements Cloneable {
 	private ArrayList<Rule> rules;
 	private ArrayList<Integer> finalStates;
+	private ArrayList<EpsilonRule> epsilonRules;
 	private int stateCount;
 	
 	public SchemeAutomata() {}
+	
+	public static void epsilonClosure(ArrayList<Integer> states, ArrayList<EpsilonRule> epsilonRules) {
+		HashSet<Integer> clsSet = new HashSet<>();
+		for (int i : states)
+			clsSet.add(i);
+		boolean chngd = true;
+		while (chngd) {
+			chngd = false;
+			for (EpsilonRule e : epsilonRules) {
+				if (clsSet.contains(e.getRes()) && !clsSet.contains(e.getArg())) {
+					chngd = true;
+					clsSet.add(e.getArg());
+					states.add(e.getArg());
+				}
+			}
+		}
+	}
 	
 	public static SchemeAutomata createEmpty() {
 		SchemeAutomata a = new SchemeAutomata();
 		a.rules = new ArrayList<>();
 		a.finalStates = new ArrayList<>();
+		a.epsilonRules = new ArrayList<>();
 		a.stateCount = 0;
 		return a;
 	}
@@ -33,6 +53,10 @@ public class SchemeAutomata implements Cloneable {
 		a.stateCount = stateCount;
 		a.finalStates = new ArrayList<>();
 		return a;
+	}
+	
+	public void closeFinalEpsilon() {
+		epsilonClosure(finalStates, epsilonRules);
 	}
 	
 	public int newState() {
@@ -104,6 +128,8 @@ public class SchemeAutomata implements Cloneable {
 		System.out.println("Rules:");
 		for (Rule rule : rules)
 			System.out.println(rule);
+		for (EpsilonRule e : epsilonRules)
+			System.out.println(e);
 		String s = "Final states: ";
 		for (int i : finalStates)
 			s += i + " ";
