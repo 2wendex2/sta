@@ -1,7 +1,6 @@
-(define (l e r) (su h))
-
-(define (d) f)
+(define (a b)
+	(cons 'izi (o b)))
 
 (s d)
 
-(define (o p ) 3)
+(define (o p ) (car p))

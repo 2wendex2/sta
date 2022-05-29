@@ -1,16 +1,13 @@
-def .+ from [
-	.w() -> qw;
-	.t() -> vv;
-	final qw;
-] [
-	.r() -> q;
-	epsilon q -> e;
-	~null() -> e;
+
+
+def .a from [
+	.q() -> e;
+	.i(ns, ns) -> e;
+	~null() -> ns;
 	final e;
 ] to [
-	.y(w e r) -> f;
-	.t() -> e;
-	final i e;
-	epsilon w -> p;
+	~null() -> w;
+	final w;
 ]
+
 

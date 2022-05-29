@@ -37,7 +37,21 @@ public class Automata implements Cloneable {
 		a.stateCount = 0;
 		return a;
 	}
-	
+
+	public static Automata createNull() {
+		Automata a = createEmpty();
+		a.addRuleSafe(new Rule(KeySymbol.NULL, new ArrayList<>(), 0));
+		a.addFinalState(0);
+		return a;
+	}
+
+	public static Automata createSymbol(String name) {
+		Automata a = createEmpty();
+		a.addRuleSafe(new Rule(new IdentSymbol(name), new ArrayList<>(), 0));
+		a.addFinalState(0);
+		return a;
+	}
+
 	public Object clone() {
 		Automata a = new Automata();
 		a.rules = (ArrayList<Rule>)rules.clone();
