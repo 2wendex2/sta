@@ -3,4 +3,4 @@
 
 (s d)
 
-(define (o p ) (car p))
+(define (o p ) (car (cdr p)))

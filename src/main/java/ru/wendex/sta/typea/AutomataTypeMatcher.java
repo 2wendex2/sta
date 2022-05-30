@@ -170,7 +170,13 @@ public class AutomataTypeMatcher {
                 throw new TypeMatcherException("function " + name + " not defined");
             }
             Automata a = matcher.applyFunction(sf, tf.getArgs());
-            a.print();
+            Automata b = tf.getRes();
+            b.eliminateEpsilonRules();
+            b.determine();
+            b.complement();
+            Automata c = a.intersect(b);
+            if (!c.isLanguageEmpty())
+                return new TypeMatcherReport(false);
         }
         return new TypeMatcherReport(true);
     }

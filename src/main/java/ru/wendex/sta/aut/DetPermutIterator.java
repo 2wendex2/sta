@@ -7,7 +7,7 @@ import java.util.Iterator;
 public class DetPermutIterator implements Iterator<ArrayList<Integer>> {
     private ArrayList<ArrayList<Integer>> p;
     private ArrayList<Integer> indices;
-    private boolean hasNextFlag = true;
+    private boolean hasNextFlag;
 
     public DetPermutIterator(ArrayList<Integer> args, HashMap<Integer, ArrayList<Integer>> stateToNew) {
         p = new ArrayList<>(args.size());
@@ -35,9 +35,6 @@ public class DetPermutIterator implements Iterator<ArrayList<Integer>> {
     @Override
     public ArrayList<Integer> next() {
         ArrayList<Integer> r = new ArrayList<>(p.size());
-        for (int i = 0; i < p.size(); i++)
-            r.add(p.get(i).get(indices.get(i)));
-        updateIndices();
         return r;
     }
 

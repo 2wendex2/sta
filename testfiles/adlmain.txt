@@ -1,13 +1,15 @@
 
 
 def .a from [
-	.q() -> e;
-	.i(ns, ns) -> e;
+	.q(d) -> e;
+	.i(ns, ns) -> d;
 	~null() -> ns;
 	final e;
 ] to [
-	~null() -> w;
-	final w;
+	.q(d) -> e;
+	.i(ns, ns) -> d;
+	~null() -> ns;
+	final d;
 ]
 
 

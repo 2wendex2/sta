@@ -233,5 +233,54 @@ public class Automata implements Cloneable {
 		}
 	}
 
-	
+	public void complement() {
+		HashSet<Integer> set = new HashSet<>(finalStates);
+		finalStates.clear();
+		for (int i = 0; i < stateCount; i++)
+			if (!set.contains(i))
+				finalStates.add(i);
+	}
+
+	public Automata intersect(Automata a) {
+		Automata r = createEmpty();
+		r.stateCount = stateCount * a.stateCount;
+		for (int i : finalStates)
+			for (int j : a.finalStates)
+				r.addFinalState(i * stateCount + j);
+		for (Rule rule1 : rules)
+			for (Rule rule2 : a.rules) {
+				if (rule1.getArgs().size() == rule2.getArgs().size() && rule1.getSymbol().equals(rule2.getSymbol())) {
+					ArrayList<Integer> newArgs = new ArrayList<>(rule1.getArgs().size());
+					for (int k = 0; k < rule1.getArgs().size(); k++)
+						newArgs.add(rule1.getArgs().get(k) * stateCount + rule2.getArgs().get(k));
+					r.rules.add(new Rule(rule1.getSymbol(), newArgs, rule1.getRes() * stateCount + rule2.getRes()));
+				}
+			}
+		return r;
+	}
+
+	public boolean isLanguageEmpty() {
+		HashSet<Integer> accessible = new HashSet<>();
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			ruleCycle:
+			for (Rule rule : rules) {
+				if (accessible.contains(rule.getRes()))
+					continue;
+				for (int s : rule.getArgs()) {
+					if (!accessible.contains(s)) {
+						continue ruleCycle;
+					}
+				}
+
+				accessible.add(rule.getRes());
+				changed = true;
+			}
+		}
+		for (int f : finalStates)
+			if (accessible.contains(f))
+				return false;
+		return true;
+	}
 }

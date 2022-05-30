@@ -31,6 +31,6 @@ public class MatcherTest {
         TypeaData typeaData = TypeaDataBuilder.build(fl);
 
 
-        AutomataTypeMatcher.match(typeaData, scmData);
+        System.out.println(AutomataTypeMatcher.match(typeaData, scmData));
     }
 }
