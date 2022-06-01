@@ -1,8 +1,8 @@
 
 
 def .a from [
-	.q(d) -> e;
-	.i(ns, ns) -> d;
+	.q(ns) -> e;
+	.i(ns, ns) -> ns;
 	~null() -> ns;
 	final e;
 ] to [

@@ -18,13 +18,14 @@ public class Token {
 	public static final int SPEC_IDENT = 13;
 	public static final int LCURLY = 14;
 	public static final int RCURLY = 15;
+	public static final int COMMA = 16;
 	
 	static final int MIN_TAG = -1;
-	static final int MAX_TAG = 15;
+	static final int MAX_TAG = 16;
 	
 	private static final String[] TAG_NAME =
 		{"IDENT", "LSQUARE", "RSQUARE", "ARROW", "SEMICOLON", "LPAREN", "RPAREN", "DEF", "FROM", "TO",
-			"FINAL", "EPSILON", "SCHEME_IDENT", "SPEC_IDENT", "LCURLY", "RCURLY"};
+			"FINAL", "EPSILON", "SCHEME_IDENT", "SPEC_IDENT", "LCURLY", "RCURLY", "COMMA"};
 	private static final String EOF_NAME = "EOF";
 	
 	public static String tagName(int tag) {

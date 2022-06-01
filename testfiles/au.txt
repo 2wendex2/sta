@@ -6,6 +6,7 @@ def .+ from [
 	.r() -> q;
 	epsilon q -> e;
 	~null() -> e;
+	~pair(t, t) -> e;
 	final e;
 ] to [
 	final i;

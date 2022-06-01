@@ -1,6 +1,7 @@
 package ru.wendex.sta.aut;
 
 import javax.print.attribute.IntegerSyntax;
+import java.lang.reflect.Array;
 import java.util.*;
 
 public class Automata implements Cloneable {
@@ -9,25 +10,16 @@ public class Automata implements Cloneable {
 	private ArrayList<EpsilonRule> epsilonRules;
 	private int stateCount;
 	
-	public Automata() {}
+	private Automata() {}
 
-	public static void epsilonClosure(ArrayList<Integer> states, ArrayList<EpsilonRule> epsilonRules) {
-		HashSet<Integer> clsSet = new HashSet<>();
-		for (int i : states)
-			clsSet.add(i);
-		boolean chngd = true;
-		while (chngd) {
-			chngd = false;
-			for (EpsilonRule e : epsilonRules) {
-				if (clsSet.contains(e.getRes()) && !clsSet.contains(e.getArg())) {
-					chngd = true;
-					clsSet.add(e.getArg());
-					states.add(e.getArg());
-				}
-			}
-		}
+	public Automata(int stateCount, ArrayList<Rule> rules, ArrayList<EpsilonRule> epsilonRules,
+					ArrayList<Integer> finalStates) {
+		this.stateCount = stateCount;
+		this.rules = rules;
+		this.epsilonRules = epsilonRules;
+		this.finalStates = finalStates;
 	}
-	
+
 	public static Automata createEmpty() {
 		Automata a = new Automata();
 		a.rules = new ArrayList<>();
@@ -40,6 +32,20 @@ public class Automata implements Cloneable {
 	public static Automata createNull() {
 		Automata a = createEmpty();
 		a.addRuleSafe(new Rule(KeySymbol.NULL, new ArrayList<>(), 0));
+		a.addFinalState(0);
+		return a;
+	}
+
+	public static Automata createTrue() {
+		Automata a = createEmpty();
+		a.addRuleSafe(new Rule(KeySymbol.TRUE, new ArrayList<>(), 0));
+		a.addFinalState(0);
+		return a;
+	}
+
+	public static Automata createFalse() {
+		Automata a = createEmpty();
+		a.addRuleSafe(new Rule(KeySymbol.TRUE, new ArrayList<>(), 0));
 		a.addFinalState(0);
 		return a;
 	}
@@ -58,6 +64,53 @@ public class Automata implements Cloneable {
 		a.stateCount = stateCount;
 		return a;
 	}
+
+	private static void epsilonCloseStateArray(ArrayList<Integer> states, ArrayList<EpsilonRule> epsilonRules) {
+		HashSet<Integer> clsSet = new HashSet<>();
+		for (int i : states)
+			clsSet.add(i);
+		boolean chngd = true;
+		while (chngd) {
+			chngd = false;
+			for (EpsilonRule e : epsilonRules) {
+				if (clsSet.contains(e.getRes()) && !clsSet.contains(e.getArg())) {
+					chngd = true;
+					clsSet.add(e.getArg());
+					states.add(e.getArg());
+				}
+			}
+		}
+	}
+
+	public void epsilonCloseFinalStates() {
+		epsilonCloseStateArray(finalStates, epsilonRules);
+	}
+
+	public void eliminateEpsilonRules() {
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			int n = rules.size();
+			for (EpsilonRule epsilonRule : epsilonRules) {
+				for (int i = 0; i < n; i++) {
+					Rule oldRule = rules.get(i);
+					if (oldRule.getRes() == epsilonRule.getArg()) {
+						Rule newRule = new Rule(oldRule.getSymbol(), oldRule.getArgs(), epsilonRule.getRes());
+						for (Rule rule2 : rules) {
+							if (newRule.equals(rule2)) {
+								break;
+							}
+							changed = true;
+							rules.add(newRule);
+						}
+					}
+				}
+			}
+		}
+		epsilonCloseFinalStates();
+		epsilonRules.clear();
+	}
+
 	
 	public Automata cloneRules() {
 		Automata a = new Automata();
@@ -67,9 +120,7 @@ public class Automata implements Cloneable {
 		return a;
 	}
 	
-	public void closeFinalEpsilon() {
-		epsilonClosure(finalStates, epsilonRules);
-	}
+
 	
 	public int newState() {
 		stateCount++;
@@ -149,30 +200,7 @@ public class Automata implements Cloneable {
 		epsilonRules.add(epsilonRule);
 	}
 
-	public void eliminateEpsilonRules() {
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			int n = rules.size();
-			for (EpsilonRule epsilonRule : epsilonRules) {
-				for (int i = 0; i < n; i++) {
-					Rule oldRule = rules.get(i);
-					if (oldRule.getRes() == epsilonRule.getArg()) {
-						Rule newRule = new Rule(oldRule.getSymbol(), oldRule.getArgs(), epsilonRule.getRes());
-						for (Rule rule2 : rules) {
-							if (newRule.equals(rule2)) {
-								break;
-							}
-							changed = true;
-							rules.add(newRule);
-						}
-					}
-				}
-			}
-		}
-		closeFinalEpsilon();
-		epsilonRules.clear();
-	}
+
 
 	public void determine() {
 		ArrayList<Rule> resultRules = new ArrayList<>();

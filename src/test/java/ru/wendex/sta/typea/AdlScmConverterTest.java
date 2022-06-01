@@ -1,12 +1,9 @@
 package ru.wendex.sta.adl;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.api.Test;
 import ru.wendex.sta.langbase.Position;
 import ru.wendex.sta.langbase.ParserException;
-import ru.wendex.sta.typea.AdlToScmConverter;
 
-import java.util.ArrayList;
 import java.io.*;
 
 public class AdlScmConverterTest {
@@ -19,7 +16,7 @@ public class AdlScmConverterTest {
 		fr.close();
 
 		for (Function f : fl.getList()) {
-			AdlToScmConverter.convert(f.getRes()).print();
+			f.getRes().print();
 		}
 	}
 }

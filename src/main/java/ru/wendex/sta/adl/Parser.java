@@ -2,6 +2,8 @@ package ru.wendex.sta.adl;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import ru.wendex.sta.aut.*;
 import ru.wendex.sta.langbase.ParserException;
 import java.io.IOException;
 
@@ -46,7 +48,7 @@ public class Parser {
 		
 		lexer.next();
 		token = lexer.peek();
-		ArrayList<AdlAutomata> args = new ArrayList<>();
+		ArrayList<Automata> args = new ArrayList<>();
 		if (token.getTag() == Token.FROM) {
 			lexer.next();
 			token = lexer.peek();
@@ -55,7 +57,7 @@ public class Parser {
 			}
 			do {
 				lexer.next();
-				AdlAutomata automata = parseAutomata();
+				Automata automata = parseAutomata();
 				args.add(automata);
 				token = lexer.peek();
 			} while (lexer.peek().getTag() == Token.LSQUARE);
@@ -69,15 +71,15 @@ public class Parser {
 			throw new ParserException("Expected automata after to\n" + lexer.peek().toString());
 		}
 		lexer.next();
-		AdlAutomata res = parseAutomata();
+		Automata res = parseAutomata();
 		Function f = new Function(name, args, res);
 		return f;
 	}
 	
-	private AdlAutomata parseAutomata() throws ParserException, IOException {
+	private Automata parseAutomata() throws ParserException, IOException {
 		arityMap.clear();
-		ArrayList<AdlRule> rules = new ArrayList<>();
-		ArrayList<AdlEpsilonRule> epsilonRules = new ArrayList<>();
+		ArrayList<Rule> rules = new ArrayList<>();
+		ArrayList<EpsilonRule> epsilonRules = new ArrayList<>();
 		ArrayList<Integer> finalStates = new ArrayList<>();
 		autoCycle: for (;;) {
 			Token token = lexer.peek();
@@ -106,26 +108,38 @@ public class Parser {
 					throw new ParserException("Expected rule\n" + lexer.peek().toString());
 			}
 		}
-		AdlAutomata a = new AdlAutomata(lexer.getIdentCount(), rules, epsilonRules, finalStates);
+		Automata a = new Automata(lexer.getIdentCount(), rules, epsilonRules, finalStates);
 		return a;
 	}
 	
 	private void parseFinalStates(ArrayList<Integer> finalStates) throws ParserException, IOException {
+		Token token = lexer.peek();
+		if (token.getTag() != Token.IDENT) {
+			throw new ParserException("Expected final state ident\n" + lexer.peek().toString());
+		}
+		int i = ((IntToken)token).getValue();
+		finalStates.add(i);
+		lexer.next();
 		for (;;) {
-			Token token = lexer.peek();
+			token = lexer.peek();
 			if (token.getTag() == Token.SEMICOLON) {
 				lexer.next();
 				return;
-			} else if (token.getTag() != Token.IDENT) {
-				throw new ParserException("Expected final state ident\n" + lexer.peek().toString());
+			} else if (token.getTag() != Token.COMMA) {
+				throw new ParserException("Expected final state comma separator\n" + lexer.peek().toString());
 			}
-			int i = ((IntToken)token).getValue();
+			lexer.next();
+			token = lexer.peek();
+			if (token.getTag() != Token.IDENT) {
+				throw new ParserException("Expected final state ident after comma\n" + lexer.peek().toString());
+			}
+			i = ((IntToken)token).getValue();
 			finalStates.add(i);
 			lexer.next();
 		}
 	}
 	
-	private AdlEpsilonRule parseEpsilonRule() throws ParserException, IOException {
+	private EpsilonRule parseEpsilonRule() throws ParserException, IOException {
 		Token token = lexer.peek();
 		if (token.getTag() != Token.IDENT) {
 			throw new ParserException("Expected epsilon rule state ident\n" + lexer.peek().toString());
@@ -149,15 +163,24 @@ public class Parser {
 		token = lexer.peek();
 		if (token.getTag() == Token.SEMICOLON) {
 			lexer.next();
-			return new AdlEpsilonRule(arg, res);
+			return new EpsilonRule(arg, res);
 		}
 		throw new ParserException("Expected ; at end of epsilon rule\n" + lexer.peek().toString());
 	}
 	
-	private AdlRule parseSpecRule() throws ParserException, IOException {
+	private Rule parseSpecRule() throws ParserException, IOException {
 		Token token = lexer.peek();
 		String s = ((StringToken)token).getValue();
-		if (!s.equals("null"))
+		Symbol symbol;
+		if (s.equals("null"))
+			symbol = KeySymbol.NULL;
+		else if (s.equals("pair"))
+			symbol = KeySymbol.PAIR;
+		else if (s.equals("true"))
+			symbol = KeySymbol.TRUE;
+		else if (s.equals("false"))
+			symbol = KeySymbol.FALSE;
+		else
 			throw new ParserException("Unknown spec symbol\n" + lexer.peek().toString());
 		lexer.next();
 		
@@ -166,7 +189,30 @@ public class Parser {
 			throw new ParserException("Expected lparen in spec rule\n" + lexer.peek().toString());
 		}
 		lexer.next();
-		
+
+		ArrayList<Integer> args = new ArrayList<>(symbol.getArity());
+		if (symbol.getArity() > 0) {
+			token = lexer.peek();
+			if (token.getTag() != Token.IDENT)
+				throw new ParserException("Argument expected in rule\n" + lexer.peek().toString());
+			int arg = ((IntToken)token).getValue();
+			args.add(arg);
+			lexer.next();
+
+			for (int i = 1; i < symbol.getArity(); i++) {
+				token = lexer.peek();
+				if (token.getTag() != Token.COMMA)
+					throw new ParserException("Argument comma separator expected\n" + lexer.peek().toString());
+				lexer.next();
+				token = lexer.peek();
+				if (token.getTag() != Token.IDENT)
+					throw new ParserException("Argument expected in rule\n" + lexer.peek().toString());
+				arg = ((IntToken)token).getValue();
+				args.add(arg);
+				lexer.next();
+			}
+		}
+
 		token = lexer.peek();
 		if (token.getTag() != Token.RPAREN) {
 			throw new ParserException("Expected rparen in spec rule\n" + lexer.peek().toString());
@@ -189,12 +235,12 @@ public class Parser {
 		token = lexer.peek();
 		if (token.getTag() == Token.SEMICOLON) {
 			lexer.next();
-			return new AdlRule(AdlKeySymbol.NULL, new ArrayList<>(), res);
+			return new Rule(symbol, args, res);
 		}
 		throw new ParserException("Expected ; at end of spec rule\n" + lexer.peek().toString());
 	}
 	
-	private AdlRule parseRule() throws ParserException, IOException {
+	private Rule parseRule() throws ParserException, IOException {
 		Token token = lexer.peek();
 		String s = ((StringToken)token).getValue();
 		lexer.next();
@@ -204,30 +250,14 @@ public class Parser {
 			throw new ParserException("Expected lparen in rule\n" + lexer.peek().toString());
 		}
 		lexer.next();
-		
-		ArrayList<Integer> args = new ArrayList<>();
-		for (;;) {
-			token = lexer.peek();
-			if (token.getTag() == Token.RPAREN) {
-				lexer.next();
-				break;
-			}
-			if (token.getTag() != Token.IDENT)
-				throw new ParserException("Expected ident state in args rule\n" + lexer.peek().toString());
-			int arg = ((IntToken)token).getValue();
-			args.add(arg);
-			lexer.next();
+
+		token = lexer.peek();
+		if (token.getTag() != Token.RPAREN) {
+			throw new ParserException("Expected rparen in spec rule\n" + lexer.peek().toString());
 		}
+		lexer.next();
 		
-		Integer i = arityMap.get(s);
-		if (i == null) {
-			i = args.size();
-			arityMap.put(s, i);
-		}
-		if (i != args.size())
-			throw new ParserException("Wrong arity\n" + s);
-		
-		AlgebraicSymbol symbol = new AlgebraicSymbol(s, i);
+		IdentSymbol symbol = new IdentSymbol(s);
 		
 		token = lexer.peek();
 		if (token.getTag() != Token.ARROW) {
@@ -245,7 +275,7 @@ public class Parser {
 		token = lexer.peek();
 		if (token.getTag() == Token.SEMICOLON) {
 			lexer.next();
-			return new AdlRule(symbol, args, res);
+			return new Rule(symbol, new ArrayList<>(), res);
 		}
 		throw new ParserException("Expected ; at end of rule\n" + lexer.peek().toString());
 	}

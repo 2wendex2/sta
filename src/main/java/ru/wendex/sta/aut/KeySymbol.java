@@ -2,7 +2,9 @@ package ru.wendex.sta.aut;
 
 public enum KeySymbol implements Symbol {
 	NULL(0, "null"),
-	PAIR(2, "pair");
+	PAIR(2, "pair"),
+	TRUE(0, "true"),
+	FALSE(0, "false");
 	
 	private int arity;
 	private String name;

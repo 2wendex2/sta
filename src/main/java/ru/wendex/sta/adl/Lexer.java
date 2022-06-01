@@ -195,6 +195,9 @@ public class Lexer {
 		} else if (c == (int)'}') {
 			nextToken = new Token(Token.RCURLY, lineb, columnb, pos.getLine(), pos.getColumn());
 			pos.next();
+		} else if (c == (int)',') {
+			nextToken = new Token(Token.COMMA, lineb, columnb, pos.getLine(), pos.getColumn());
+			pos.next();
 		} else if (c == (int)'-') {
 			pos.next();
 			int c2 = pos.peek();
