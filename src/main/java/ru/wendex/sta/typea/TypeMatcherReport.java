@@ -10,4 +10,8 @@ public class TypeMatcherReport {
     public String toString() {
         return String.valueOf(isMatch);
     }
+
+    public boolean getSuccess() {
+        return isMatch;
+    }
 }

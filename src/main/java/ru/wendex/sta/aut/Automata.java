@@ -219,8 +219,7 @@ public class Automata implements Cloneable {
 					}
 				}
 
-				Iterator<ArrayList<Integer>> ait = new DetPermutIterator(rule.getArgs(), stateToNew);
-				for (ArrayList<Integer> a = ait.next(); ait.hasNext(); a = ait.next()) {
+				Iterator<ArrayList<Integer>> ait = new DetPermutIterafor (ArrayList<Integer> a = ait.next(); ait.hasNext(); a = ait.next()) {
 					RuleSignature sign = new RuleSignature(rule.getSymbol(), a);
 					HashSet<Integer> signSet = newSignatures.get(sign);
 					if (signSet == null) {

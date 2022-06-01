@@ -13,15 +13,16 @@ public class Main {
     public static void main(String[] args) throws Exception {
         if (args.length != 2) {
             System.out.println("usage: <type description file> <scheme source>");
+            return;
         }
-        FileReader fr1 = new FileReader(args[0]);
+        FileReader fr1 = new FileReader(args[1]);
         Position pos1 = new Position(fr1);
         Lexer lexer1 = new Lexer(pos1);
         Ast ast = Parser.parse(lexer1);
         fr1.close();
         ScmData scmData = ScmDataBuilder.build(ast);
 
-        FileReader fr2 = new FileReader(args[1]);
+        FileReader fr2 = new FileReader(args[0]);
         Position pos2 = new Position(fr2);
         ru.wendex.sta.adl.Lexer lexer2 = new ru.wendex.sta.adl.Lexer(pos2);
         FunctionList fl = ru.wendex.sta.adl.Parser.parse(lexer2);
