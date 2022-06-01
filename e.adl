@@ -6,10 +6,10 @@ def .a from [
 	~null() -> ns;
 	final e;
 ] to [
-	.q(d) -> d;
-	.i(ns, ns) -> e;
+	.q(d) -> e;
+	.i(ns, ns) -> d;
 	~null() -> ns;
-	final e;
+	final d;
 ]
 
 

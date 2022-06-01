@@ -1,6 +1,6 @@
 (define (a b)
-	(o b))
+	(cons 'i (o b)))
 
 (s d)
 
-(define (o p ) (car (cdr p)))
+(define (o p )  (car (cdr p)))

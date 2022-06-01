@@ -184,8 +184,8 @@ public class AutomataTypeMatcher {
             System.out.println("INTRSCT");
             c.print();
             if (!c.isLanguageEmpty())
-                return new TypeMatcherReport(false);
+                return new TypeMatcherReport(true);
         }
-        return new TypeMatcherReport(true);
+        return new TypeMatcherReport(false);
     }
 }
