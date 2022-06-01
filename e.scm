@@ -1,5 +1,5 @@
 (define (a b)
-	(cons 'izi (o b)))
+	(o b))
 
 (s d)
 

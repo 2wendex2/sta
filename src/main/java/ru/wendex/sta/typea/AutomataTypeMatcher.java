@@ -171,10 +171,18 @@ public class AutomataTypeMatcher {
             }
             Automata a = matcher.applyFunction(sf, tf.getArgs());
             Automata b = tf.getRes();
+
+            System.out.println("DEF");
+            a.print();
+            System.out.println("DEC");
+            b.print();
             b.eliminateEpsilonRules();
-            b.determine();
             b.complement();
+            System.out.println("COMPL");
+            b.print();
             Automata c = a.intersect(b);
+            System.out.println("INTRSCT");
+            c.print();
             if (!c.isLanguageEmpty())
                 return new TypeMatcherReport(false);
         }

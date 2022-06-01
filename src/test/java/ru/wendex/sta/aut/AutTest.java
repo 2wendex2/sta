@@ -7,6 +7,20 @@ import java.util.ArrayList;
 
 public class AutTest {
 	@Test
+	public void rdTest() throws IOException {
+		FileInputStream fr = new FileInputStream("testfiles/schemeaut.txt");
+
+		Scanner sc = new Scanner(fr);
+
+		Automata aut = readAutomata(sc);
+		aut.print();
+		aut.complement();
+		aut.print();
+
+		fr.close();
+	}
+
+	/*@Test
 	public void consTest() throws IOException {
 		FileInputStream fr = new FileInputStream("testfiles/schemeaut.txt");
 		
@@ -46,7 +60,7 @@ public class AutTest {
 		aut.print();
 		
 		fr.close();
-	}
+	}*/
 	
 	public Automata readAutomata(Scanner sc) throws IOException {
 		Automata aut = Automata.createEmpty();

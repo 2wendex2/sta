@@ -219,7 +219,8 @@ public class Automata implements Cloneable {
 					}
 				}
 
-				Iterator<ArrayList<Integer>> ait = new DetPermutIterafor (ArrayList<Integer> a = ait.next(); ait.hasNext(); a = ait.next()) {
+				DetPermutIterator ait = new DetPermutIterator(rule.getArgs(), stateToNew);
+				for (ArrayList<Integer> a = ait.next(); ait.hasNext(); a = ait.next()) {
 					RuleSignature sign = new RuleSignature(rule.getSymbol(), a);
 					HashSet<Integer> signSet = newSignatures.get(sign);
 					if (signSet == null) {
@@ -232,7 +233,33 @@ public class Automata implements Cloneable {
 		}
 	}
 
+	public void complete() {
+		HashSet<RuleSignature> signatureSet = new HashSet<>();
+		HashSet<Symbol> symbolsSet = new HashSet<>();
+		for (Rule rule : rules) {
+			symbolsSet.add(rule.getSymbol());
+			signatureSet.add(new RuleSignature(rule.getSymbol(), rule.getArgs()));
+		}
+
+		int dummyState = stateCount;
+		stateCount++;
+		for (Symbol symbol : symbolsSet) {
+			SymbolArgsEnumerator enumerator = new SymbolArgsEnumerator(symbol.getArity(), stateCount);
+			ArrayList<Integer> args = enumerator.peek();
+			while (args != null) {
+				RuleSignature signature = new RuleSignature(symbol, (ArrayList<Integer>) args.clone());
+				if (!signatureSet.contains(signature)) {
+					rules.add(new Rule(symbol, (ArrayList<Integer>) args.clone(), dummyState));
+				}
+				enumerator.next();
+				args = enumerator.peek();
+			}
+		}
+	}
+
 	public void complement() {
+		determine();
+		complete();
 		HashSet<Integer> set = new HashSet<>(finalStates);
 		finalStates.clear();
 		for (int i = 0; i < stateCount; i++)
