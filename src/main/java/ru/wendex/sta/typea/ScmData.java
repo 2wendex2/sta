@@ -7,7 +7,7 @@ public class ScmData {
 	private HashMap<String, ScmFunction> funcs;
 	private int stateCount;
 	
-	public ScmData(HashMap<String, ScmFunction> funcs, int stateCount) {
+	ScmData(HashMap<String, ScmFunction> funcs, int stateCount) {
 		this.funcs = funcs;
 		this.stateCount = stateCount;
 	}

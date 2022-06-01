@@ -87,29 +87,33 @@ public class Automata implements Cloneable {
 	}
 
 	public void eliminateEpsilonRules() {
+		HashSet<Rule> rulesSet = new HashSet<>();
+		ArrayList<Rule> newRules = (ArrayList<Rule>)rules.clone();
+		for (Rule rule : rules)
+			rulesSet.add(rule);
 		boolean changed = true;
 		while (changed) {
 			changed = false;
 			int n = rules.size();
 			for (EpsilonRule epsilonRule : epsilonRules) {
-				for (int i = 0; i < n; i++) {
-					Rule oldRule = rules.get(i);
+				for (Rule oldRule : rules) {
 					if (oldRule.getRes() == epsilonRule.getArg()) {
 						Rule newRule = new Rule(oldRule.getSymbol(), oldRule.getArgs(), epsilonRule.getRes());
-						for (Rule rule2 : rules) {
-							if (newRule.equals(rule2)) {
-								break;
-							}
-							changed = true;
-							rules.add(newRule);
+						if (rulesSet.contains(newRule)) {
+							continue;
 						}
+						changed = true;
+						rulesSet.add(newRule);
+						newRules.add(newRule);
 					}
 				}
+				rules = (ArrayList<Rule>)newRules.clone();
 			}
 		}
 		epsilonCloseFinalStates();
 		epsilonRules.clear();
 	}
+
 
 	
 	public Automata cloneRules() {

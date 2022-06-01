@@ -28,7 +28,7 @@ public class Function {
 	}
 	
 	public void print() {
-		System.out.println("FUCTION " + name);
+		System.out.println("FUNCTION " + name);
 		System.out.println("FROM");
 		for (Automata a : args)
 			a.print();

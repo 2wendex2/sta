@@ -9,6 +9,10 @@ def .+ from [
 	~pair(t, t) -> e;
 	final e;
 ] to [
+	~null() -> p;
+	epsilon p -> i;
+	.y() -> l;
+	~pair(l, i) -> i;
 	final i;
 ]
 
