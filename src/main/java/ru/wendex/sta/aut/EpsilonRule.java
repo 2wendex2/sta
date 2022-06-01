@@ -13,7 +13,15 @@ public class EpsilonRule {
 	public int getArg() {
 		return arg;
 	}
-	
+
+	void setArg(int arg) {
+		this.arg = arg;
+	}
+
+	void setRes(int res) {
+		this.res = res;
+	}
+
 	public EpsilonRule(int arg, int res) {
 		this.arg = arg;
 		this.res = res;

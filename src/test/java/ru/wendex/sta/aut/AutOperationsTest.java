@@ -26,7 +26,17 @@ public class AutOperationsTest {
         Automata b = f.getRes();
 
         b.print();
+        b.eliminateNotUsedStates();
+        b.print();
         b.eliminateEpsilonRules();
         b.print();
+        b.determine();
+        b.print();
+        //b.complete();
+        //b.print();
+        //b.complement();
+        //b.print();
+        //b.eliminateEpsilonRules();
+        //b.print();
     }
 }

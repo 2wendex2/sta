@@ -19,7 +19,11 @@ public class Rule {
 	public ArrayList<Integer> getArgs() {
 		return args;
 	}
-	
+
+	void setRes(int res) {
+		this.res = res;
+	}
+
 	public Rule(Symbol symbol, ArrayList<Integer> args, int res) {
 		this.symbol = symbol;
 		this.args = args;

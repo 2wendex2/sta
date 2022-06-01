@@ -1,7 +1,5 @@
 package ru.wendex.sta.aut;
 
-import javax.print.attribute.IntegerSyntax;
-import java.lang.reflect.Array;
 import java.util.*;
 
 public class Automata implements Cloneable {
@@ -114,7 +112,152 @@ public class Automata implements Cloneable {
 		epsilonRules.clear();
 	}
 
+	public void eliminateNotUsedStates() {
+		HashMap<Integer, Integer> statesMap = new HashMap<>();
+		stateCount = 0;
+		for (Rule rule : rules) {
+			Integer newState = statesMap.get(rule.getRes());
+			if (newState == null) {
+				statesMap.put(rule.getRes(), stateCount);
+				newState = stateCount;
+				stateCount++;
+			}
+			rule.setRes(newState);
+			for (int i = 0; i < rule.getArgs().size(); i++) {
+				int arg = rule.getArgs().get(i);
+				newState = statesMap.get(arg);
+				if (newState == null) {
+					statesMap.put(arg, stateCount);
+					newState = stateCount;
+					stateCount++;
+				}
+				rule.getArgs().set(i, newState);
+			}
+		}
 
+		for (int i = 0; i < finalStates.size(); i++) {
+			Integer newState = statesMap.get(finalStates.get(i));
+			if (newState == null) {
+				statesMap.put(finalStates.get(i), stateCount);
+				newState = stateCount;
+				stateCount++;
+			}
+			finalStates.set(i, newState);
+		}
+
+		for (EpsilonRule rule : epsilonRules) {
+			Integer newState = statesMap.get(rule.getRes());
+			if (newState == null) {
+				statesMap.put(rule.getRes(), stateCount);
+				newState = stateCount;
+				stateCount++;
+			}
+			rule.setRes(newState);
+			newState = statesMap.get(rule.getArg());
+			if (newState == null) {
+				statesMap.put(rule.getArg(), stateCount);
+				newState = stateCount;
+				stateCount++;
+			}
+			rule.setArg(newState);
+		}
+	}
+
+	public void complete() {
+		HashSet<RuleSignature> signatureSet = new HashSet<>();
+		HashSet<Symbol> symbolsSet = new HashSet<>();
+		for (Rule rule : rules) {
+			symbolsSet.add(rule.getSymbol());
+			signatureSet.add(new RuleSignature(rule.getSymbol(), rule.getArgs()));
+		}
+
+		int dummyState = stateCount;
+		stateCount++;
+		for (Symbol symbol : symbolsSet) {
+			SymbolArgsEnumerator enumerator = new SymbolArgsEnumerator(symbol.getArity(), stateCount);
+			ArrayList<Integer> args = enumerator.peek();
+			while (args != null) {
+				RuleSignature signature = new RuleSignature(symbol, (ArrayList<Integer>) args.clone());
+				if (!signatureSet.contains(signature)) {
+					rules.add(new Rule(symbol, (ArrayList<Integer>) args.clone(), dummyState));
+				}
+				enumerator.next();
+				args = enumerator.peek();
+			}
+		}
+	}
+
+	public void determine() {
+		eliminateEpsilonRules();
+		HashMap<HashSet<Integer>, Integer> newStatesMap = new HashMap<>();
+		HashMap<Integer, ArrayList<Integer>> stateToNew = new HashMap<>();
+
+		ArrayList<Rule> resultRules = new ArrayList<>();
+		HashSet<RuleSignature> newRulesSignatures = new HashSet<>();
+
+		int newStateCount = 0;
+
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			HashMap<RuleSignature, HashSet<Integer>> newResStates = new HashMap<>();
+			for (Rule rule : rules) {
+				DetArgsEnumerator ait = DetArgsEnumerator.createFromOldArgs(rule.getArgs(), stateToNew);
+				if (ait == null)
+					continue;
+				ArrayList<Integer> newArgs = ait.peek();
+				while (newArgs != null) {
+					RuleSignature signature = new RuleSignature(rule.getSymbol(), newArgs);
+					if (!newRulesSignatures.contains(signature)) {
+						HashSet<Integer> newResState = newResStates.get(signature);
+						if (newResState == null) {
+							newResState = new HashSet<>();
+							newResStates.put(signature, newResState);
+						}
+						newResState.add(rule.getRes());
+					}
+					ait.next();
+					newArgs = ait.peek();
+				}
+			}
+
+			for (Map.Entry<RuleSignature, HashSet<Integer>> entry : newResStates.entrySet()) {
+				changed = true;
+				RuleSignature signature = entry.getKey();
+				HashSet<Integer> oldStateSet = entry.getValue();
+
+				Integer newStateInt = newStatesMap.get(oldStateSet);
+				if (newStateInt == null) {
+					newStateInt = newStateCount;
+					newStateCount++;
+					newStatesMap.put(oldStateSet, newStateInt);
+					for (int oldState : oldStateSet) {
+						ArrayList<Integer> newStateArray = stateToNew.get(oldState);
+						if (newStateArray == null) {
+							newStateArray = new ArrayList<>();
+							stateToNew.put(oldState, newStateArray);
+						}
+						newStateArray.add(newStateInt);
+					}
+				}
+
+				newRulesSignatures.add(signature);
+				resultRules.add(new Rule(signature.getSymbol(), signature.getArgs(), newStateInt));
+			}
+		}
+
+		HashSet<Integer> newFinalStates = new HashSet<>();
+		for (int finalState : finalStates) {
+			ArrayList<Integer> newFinalStateSet = stateToNew.get(finalState);
+			if (newFinalStateSet == null)
+				continue;
+			newFinalStates.addAll(newFinalStateSet);
+		}
+
+		rules = resultRules;
+		stateCount = newStateCount;
+		finalStates = new ArrayList<>(newFinalStates);
+	}
 	
 	public Automata cloneRules() {
 		Automata a = new Automata();
@@ -206,88 +349,9 @@ public class Automata implements Cloneable {
 
 
 
-	public void determine() {
-		ArrayList<Rule> resultRules = new ArrayList<>();
-		HashSet<RuleSignature> newRulesSignature = new HashSet<>();
-		HashMap<Integer, ArrayList<Integer>> stateToNew = new HashMap<>();
-		HashMap<Integer, ArrayList<Integer>> stateToOld = new HashMap<>();
-		HashMap<HashSet<Integer>, Integer> newStates = new HashMap<>();
-		int newStateCount = 0;
 
-		HashMap<Symbol, HashSet<Integer>> nullaryStates = new HashMap<>();
-		for (Rule rule : rules) {
-			if (rule.getArgs().size() == 0) {
-				int oldState = rule.getRes();
-				ArrayList<Integer> a = stateToNew.get(oldState);
-				if (a == null) {
-					a = new ArrayList<>();
-					stateToNew.put(oldState, a);
-				}
-				a.add(newStateCount);
-				ArrayList<Integer> b = new ArrayList<>();
-				b.add(oldState);
-				stateToOld.put(newStateCount, b);
-				newStateCount++;
-			}
-		}
 
-		for (Map.Entry<Integer, ArrayList<Integer>> a : stateToOld.entrySet()) {
-			newStates.put(new HashSet<>(a.getValue()), a.getKey());
-		}
 
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			HashMap<RuleSignature, HashSet<Integer>> newSignatures = new HashMap<>();
-			ruleCycle:
-			for (Rule rule : rules) {
-				if (rule.getArgs().size() == 0)
-					continue;
-
-				for (int argState : rule.getArgs()) {
-					ArrayList<Integer> lst = stateToNew.get(argState);
-					if (lst == null) {
-						continue ruleCycle;
-					}
-				}
-
-				DetPermutIterator ait = new DetPermutIterator(rule.getArgs(), stateToNew);
-				for (ArrayList<Integer> a = ait.next(); ait.hasNext(); a = ait.next()) {
-					RuleSignature sign = new RuleSignature(rule.getSymbol(), a);
-					HashSet<Integer> signSet = newSignatures.get(sign);
-					if (signSet == null) {
-						signSet = new HashSet<>();
-						newSignatures.put(sign, signSet);
-					}
-					signSet.add(rule.getRes());
-				}
-			}
-		}
-	}
-
-	public void complete() {
-		HashSet<RuleSignature> signatureSet = new HashSet<>();
-		HashSet<Symbol> symbolsSet = new HashSet<>();
-		for (Rule rule : rules) {
-			symbolsSet.add(rule.getSymbol());
-			signatureSet.add(new RuleSignature(rule.getSymbol(), rule.getArgs()));
-		}
-
-		int dummyState = stateCount;
-		stateCount++;
-		for (Symbol symbol : symbolsSet) {
-			SymbolArgsEnumerator enumerator = new SymbolArgsEnumerator(symbol.getArity(), stateCount);
-			ArrayList<Integer> args = enumerator.peek();
-			while (args != null) {
-				RuleSignature signature = new RuleSignature(symbol, (ArrayList<Integer>) args.clone());
-				if (!signatureSet.contains(signature)) {
-					rules.add(new Rule(symbol, (ArrayList<Integer>) args.clone(), dummyState));
-				}
-				enumerator.next();
-				args = enumerator.peek();
-			}
-		}
-	}
 
 	public void complement() {
 		determine();
