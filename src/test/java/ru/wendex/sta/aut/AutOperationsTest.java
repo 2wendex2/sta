@@ -34,13 +34,14 @@ public class AutOperationsTest {
         b.intersect(a);
         b.eliminateEpsilonRules();
         b.print();
-        /*b.eliminateEpsilonRules();
+
+        System.out.println(b.isLanguageEmpty());
+        System.out.println(a.isLanguageEmpty());
+        b.eliminateEpsilonRules();
         b.print();
         b.determine();
         b.print();
         b.complement();
-        b.print();*/
-        //b.eliminateEpsilonRules();
-        //b.print();
+        b.print();
     }
 }

@@ -307,6 +307,39 @@ public class Automata implements Cloneable {
 		epsilonRules = newEpsilonRules;
 	}
 
+	public boolean isLanguageEmpty() {
+		HashSet<Integer> accessible = new HashSet<>();
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			ruleCycle:
+			for (Rule rule : rules) {
+				if (accessible.contains(rule.getRes()))
+					continue;
+				for (int s : rule.getArgs()) {
+					if (!accessible.contains(s)) {
+						continue ruleCycle;
+					}
+				}
+
+				accessible.add(rule.getRes());
+				changed = true;
+			}
+
+			for (EpsilonRule epsilonRule : epsilonRules){
+				if (accessible.contains(epsilonRule.getRes()))
+					continue;
+				if (!accessible.contains(epsilonRule.getArg()))
+					continue;
+				accessible.add(epsilonRule.getRes());
+				changed = true;
+			}
+		}
+		for (int f : finalStates)
+			if (accessible.contains(f))
+				return false;
+		return true;
+	}
 
 	public Automata cloneRules() {
 		Automata a = new Automata();
@@ -406,28 +439,5 @@ public class Automata implements Cloneable {
 
 
 
-	public boolean isLanguageEmpty() {
-		HashSet<Integer> accessible = new HashSet<>();
-		boolean changed = true;
-		while (changed) {
-			changed = false;
-			ruleCycle:
-			for (Rule rule : rules) {
-				if (accessible.contains(rule.getRes()))
-					continue;
-				for (int s : rule.getArgs()) {
-					if (!accessible.contains(s)) {
-						continue ruleCycle;
-					}
-				}
 
-				accessible.add(rule.getRes());
-				changed = true;
-			}
-		}
-		for (int f : finalStates)
-			if (accessible.contains(f))
-				return false;
-		return true;
-	}
 }
