@@ -1,7 +1,10 @@
 def .+ from [
-	.w() -> qw;
-	.t() -> vv;
-	final qw;
+	.y() -> y;
+	~null() -> n;
+	~pair(y, n) -> f;
+	epsilon n -> f;
+	.k() -> f;
+	final f;
 ] [
 	.r() -> q;
 	epsilon q -> e;

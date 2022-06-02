@@ -180,7 +180,8 @@ public class AutomataTypeMatcher {
             b.complement();
             System.out.println("COMPL");
             b.print();
-            Automata c = a.intersect(b);
+            a.intersect(b);
+            Automata c = a;
             System.out.println("INTRSCT");
             c.print();
             if (!c.isLanguageEmpty())

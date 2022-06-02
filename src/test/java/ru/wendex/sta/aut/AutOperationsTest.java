@@ -28,14 +28,18 @@ public class AutOperationsTest {
         b.print();
         b.eliminateNotUsedStates();
         b.print();
+
+        Automata a = f.getArgs().get(0);
+        a.print();
+        b.intersect(a);
         b.eliminateEpsilonRules();
+        b.print();
+        /*b.eliminateEpsilonRules();
         b.print();
         b.determine();
         b.print();
-        //b.complete();
-        //b.print();
-        //b.complement();
-        //b.print();
+        b.complement();
+        b.print();*/
         //b.eliminateEpsilonRules();
         //b.print();
     }

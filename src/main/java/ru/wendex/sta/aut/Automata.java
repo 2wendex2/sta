@@ -258,7 +258,56 @@ public class Automata implements Cloneable {
 		stateCount = newStateCount;
 		finalStates = new ArrayList<>(newFinalStates);
 	}
-	
+
+	public void complement() {
+		determine();
+		complete();
+		HashSet<Integer> set = new HashSet<>(finalStates);
+		finalStates.clear();
+		for (int i = 0; i < stateCount; i++)
+			if (!set.contains(i))
+				finalStates.add(i);
+	}
+
+	public void intersect(Automata a) {
+		int newStateCount = stateCount * a.stateCount;
+		ArrayList<Integer> newFinalStates = new ArrayList<>();
+		ArrayList<Rule> newRules = new ArrayList<>();
+		ArrayList<EpsilonRule> newEpsilonRules = new ArrayList<>();
+
+		for (int i : finalStates)
+			for (int j : a.finalStates)
+				newFinalStates.add(i * stateCount + j);
+		for (Rule rule1 : rules)
+			for (Rule rule2 : a.rules) {
+				if (rule1.getArgs().size() == rule2.getArgs().size() && rule1.getSymbol().equals(rule2.getSymbol())) {
+					ArrayList<Integer> newArgs = new ArrayList<>(rule1.getArgs().size());
+					for (int k = 0; k < rule1.getArgs().size(); k++)
+						newArgs.add(rule1.getArgs().get(k) * stateCount + rule2.getArgs().get(k));
+					newRules.add(new Rule(rule1.getSymbol(), newArgs, rule1.getRes() * stateCount + rule2.getRes()));
+				}
+			}
+		for (EpsilonRule epsilonRule1 : epsilonRules) {
+			for (int state2 = 0; state2 < a.stateCount; state2++) {
+				newEpsilonRules.add(new EpsilonRule(epsilonRule1.getArg() * stateCount + state2,
+						epsilonRule1.getRes() * stateCount + state2));
+			}
+		}
+
+		for (EpsilonRule epsilonRule2 : a.epsilonRules) {
+			for (int state1 = 0; state1 < stateCount; state1++) {
+				newEpsilonRules.add(new EpsilonRule(state1 * stateCount + epsilonRule2.getArg(),
+						state1 * stateCount + epsilonRule2.getRes()));
+			}
+		}
+
+		stateCount = newStateCount;
+		finalStates = newFinalStates;
+		rules = newRules;
+		epsilonRules = newEpsilonRules;
+	}
+
+
 	public Automata cloneRules() {
 		Automata a = new Automata();
 		a.rules = (ArrayList<Rule>)rules.clone();
@@ -353,33 +402,9 @@ public class Automata implements Cloneable {
 
 
 
-	public void complement() {
-		determine();
-		complete();
-		HashSet<Integer> set = new HashSet<>(finalStates);
-		finalStates.clear();
-		for (int i = 0; i < stateCount; i++)
-			if (!set.contains(i))
-				finalStates.add(i);
-	}
 
-	public Automata intersect(Automata a) {
-		Automata r = createEmpty();
-		r.stateCount = stateCount * a.stateCount;
-		for (int i : finalStates)
-			for (int j : a.finalStates)
-				r.addFinalState(i * stateCount + j);
-		for (Rule rule1 : rules)
-			for (Rule rule2 : a.rules) {
-				if (rule1.getArgs().size() == rule2.getArgs().size() && rule1.getSymbol().equals(rule2.getSymbol())) {
-					ArrayList<Integer> newArgs = new ArrayList<>(rule1.getArgs().size());
-					for (int k = 0; k < rule1.getArgs().size(); k++)
-						newArgs.add(rule1.getArgs().get(k) * stateCount + rule2.getArgs().get(k));
-					r.rules.add(new Rule(rule1.getSymbol(), newArgs, rule1.getRes() * stateCount + rule2.getRes()));
-				}
-			}
-		return r;
-	}
+
+
 
 	public boolean isLanguageEmpty() {
 		HashSet<Integer> accessible = new HashSet<>();
