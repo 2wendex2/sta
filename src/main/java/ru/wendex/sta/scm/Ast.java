@@ -21,10 +21,4 @@ public class Ast {
 	public ArrayList<Node> getNodes() {
 		return nodes;
 	}
-	
-	public void unquote() throws ParserException {
-		for (int i = 0; i < nodes.size(); i++) {
-			nodes.set(i, nodes.get(i).unquote());
-		}
-	}
 }

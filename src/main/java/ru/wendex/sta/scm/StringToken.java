@@ -1,7 +1,5 @@
 package ru.wendex.sta.scm;
 
-import ru.wendex.sta.scm.Token;
-
 public class StringToken extends Token {
 	private String value;
 	

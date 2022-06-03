@@ -18,16 +18,12 @@ public abstract class Node {
 	
 	public static String endPrefix(String s, int k) {
 		if (k == 1) {
-        		return s + "├";
-    		} else if (k ==2) {
-        		return s + "└";
-    		} else {
-    			return s;
-    		}
-	}
-	
-	public Node unquote() throws ParserException {
-		return this;
+			return s + "├";
+		} else if (k == 2) {
+			return s + "└";
+		} else {
+			return s;
+		}
 	}
 	
 	public void print() {
