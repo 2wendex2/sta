@@ -11,6 +11,7 @@ import ru.wendex.sta.langbase.Position;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Scanner;
 
 public class AutOperationsTest {
@@ -25,6 +26,8 @@ public class AutOperationsTest {
         Function f = fl.getList().get(0);
         Automata b = f.getRes();
 
+        b.print();
+        b.eliminateNotAccessible();
         b.print();
         b.eliminateNotUsedStates();
         b.print();
@@ -41,7 +44,23 @@ public class AutOperationsTest {
         b.print();
         b.determine();
         b.print();
-        b.complement();
+        b.complement(new HashSet<>());
         b.print();
+    }
+
+    @Test
+    public void procTest() throws IOException, ParserException {
+        FileReader fr = new FileReader("testfiles/au.txt");
+        Position pos = new Position(fr);
+        Lexer lexer = new Lexer(pos);
+        FunctionList fl = Parser.parse(lexer);
+        fr.close();
+
+        Function f = fl.getList().get(0);
+        Automata b = f.getRes();
+
+        b.print();
+        Automata c = Procedures.isNull(b);
+        c.print();
     }
 }

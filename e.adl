@@ -1,15 +1,22 @@
 
 
-def .a from [
-	.q(ns) -> e;
-	.i(ns, ns) -> ns;
-	~null() -> ns;
-	final e;
+def .a to [
+	.tt() -> tt;
+	.a() -> tt;
+	final tt;
+]
+
+def .b from [
+	.a() -> a;
+	final a;
+] [
+	.b() -> b;
+	final b;
 ] to [
-	.q(d) -> e;
-	.i(ns, ns) -> d;
-	~null() -> ns;
-	final d;
+	.a() -> a;
+	.b() -> b;
+	~pair(a, b) -> c;
+	final c;
 ]
 
 

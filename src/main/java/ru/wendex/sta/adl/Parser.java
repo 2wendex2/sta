@@ -6,10 +6,12 @@ import java.util.HashMap;
 import ru.wendex.sta.aut.*;
 import ru.wendex.sta.langbase.ParserException;
 import java.io.IOException;
+import java.util.HashSet;
 
 public class Parser {
 	private Lexer lexer;
 	private HashMap<String, Integer> arityMap = new HashMap<>();
+	private HashSet<String> functionSet = new HashSet<>();
 	
 	private Parser(Lexer lexer) throws IOException {
 		this.lexer = lexer;
@@ -45,6 +47,9 @@ public class Parser {
 		}
 		
 		String name = ((StringToken)token).getValue();
+		if (functionSet.contains(name))
+			throw new ParserException("duplicate function name");
+		functionSet.add(name);
 		
 		lexer.next();
 		token = lexer.peek();

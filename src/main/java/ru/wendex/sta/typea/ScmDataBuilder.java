@@ -2,17 +2,20 @@ package ru.wendex.sta.typea;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+
+import ru.wendex.sta.aut.Symbol;
 import ru.wendex.sta.scm.*;
 
 public class ScmDataBuilder {
 	private HashMap<String, ScmFunction> funcs = new HashMap<>();
+	private HashMap<String, Node> vars = new HashMap<>();
 	private Ast ast;
 	private int stateCount = 0;
 	
 	public static ScmData build(Ast ast) throws ScmToAutException {
 		ScmDataBuilder builder = new ScmDataBuilder(ast);
 		builder.procAst();
-		return new ScmData(builder.funcs, builder.stateCount);
+		return new ScmData(builder.funcs, builder.vars, builder.stateCount);
 	}
 	
 	private ScmDataBuilder(Ast ast) {
@@ -28,7 +31,8 @@ public class ScmDataBuilder {
 	}
 	
 	private static boolean isNodeDefine(Node node) {
-		return (node instanceof PairNode) && (((PairNode)node).getCar() instanceof SymbolNode) && ((SymbolNode)(((PairNode)node).getCar())).getValue().equals("define");
+		return (node instanceof PairNode) && (((PairNode)node).getCar() instanceof SymbolNode) &&
+				((SymbolNode)(((PairNode)node).getCar())).getValue().equals("define");
 	} 
 	
 	private void procDefineTail1(Node node) throws ScmToAutException {
@@ -36,7 +40,7 @@ public class ScmDataBuilder {
 			throw new ScmToAutException("Incorrect define argument 1");
 		PairNode a = (PairNode)node;
 		Node body = procDefineTail2(a.getCdr());
-		procFunctionDefine(a.getCar(), body);
+		procFvDefine(a.getCar(), body);
 	}
 	
 	private Node procDefineTail2(Node node) throws ScmToAutException {
@@ -48,7 +52,16 @@ public class ScmDataBuilder {
 		return a.getCar();
 	}
 	
-	private void procFunctionDefine(Node args, Node body) throws ScmToAutException {
+	private void procFvDefine(Node args, Node body) throws ScmToAutException {
+		if (args instanceof SymbolNode) {
+			SymbolNode symbolNode = (SymbolNode)args;
+			String name = symbolNode.getValue();
+			if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDART_FUNCTIONS.contains(name)) {
+				throw new ScmToAutException("Duplicate variable " + name);
+			}
+			vars.put(name, body);
+			return;
+		}
 		if (!(args instanceof PairNode))
 			throw new ScmToAutException("Incorrect function signature");
 		PairNode node = (PairNode)args;
@@ -56,6 +69,9 @@ public class ScmDataBuilder {
 		if (!(a instanceof SymbolNode))
 			throw new ScmToAutException("Incorrect function name");
 		String name = ((SymbolNode)a).getValue();
+		if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDART_FUNCTIONS.contains(name)) {
+			throw new ScmToAutException("Duplicate function " + name);
+		}
 		ArrayList<String> as = procFunctionArgs(node.getCdr());
 		stateCount++;
 		

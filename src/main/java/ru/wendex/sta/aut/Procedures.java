@@ -3,10 +3,88 @@ package ru.wendex.sta.aut;
 import java.util.ArrayList;
 
 public class Procedures {
+	private static Automata createBooleanAutomata(boolean isTrue, boolean isFalse) {
+		Automata r = Automata.createEmpty();
+		if (isTrue) {
+			r.addRuleSafe(new Rule(KeySymbol.TRUE, new ArrayList<>(), 0));
+		}
+		if (isFalse) {
+			r.addRuleSafe(new Rule(KeySymbol.FALSE, new ArrayList<>(), 0));
+		}
+
+		r.addFinalStateSafe(0);
+		return r;
+	}
+
+	public static Automata isNull(Automata a) {
+		boolean isTrue = false;
+		boolean isFalse = false;
+		a.eliminateNotAccessible();
+		a.epsilonCloseFinalStates();
+		for (int finalState : a.getFinalStates())
+			for (Rule rule : a.getStateRules(finalState)) {
+				if (rule.getSymbol() == KeySymbol.NULL)
+					isTrue = true;
+				else
+					isFalse = true;
+			}
+		return createBooleanAutomata(isTrue, isFalse);
+	}
+
+	public static Automata isPair(Automata a) {
+		boolean isTrue = false;
+		boolean isFalse = false;
+		a.eliminateNotAccessible();
+		a.epsilonCloseFinalStates();
+		for (int finalState : a.getFinalStates())
+			for (Rule rule : a.getStateRules(finalState)) {
+				if (rule.getSymbol() == KeySymbol.PAIR)
+					isTrue = true;
+				else
+					isFalse = true;
+			}
+
+		return createBooleanAutomata(isTrue, isFalse);
+	}
+
+	public static Automata isBoolean(Automata a) {
+		boolean isTrue = false;
+		boolean isFalse = false;
+		a.eliminateNotAccessible();
+		a.epsilonCloseFinalStates();
+		for (int finalState : a.getFinalStates())
+			for (Rule rule : a.getStateRules(finalState)) {
+				if (rule.getSymbol() == KeySymbol.TRUE || rule.getSymbol() == KeySymbol.FALSE)
+					isTrue = true;
+				else
+					isFalse = true;
+			}
+
+		return createBooleanAutomata(isTrue, isFalse);
+	}
+
+	public static Automata isSymbol(Automata a) {
+		boolean isTrue = false;
+		boolean isFalse = false;
+		a.eliminateNotAccessible();
+		a.epsilonCloseFinalStates();
+		for (int finalState : a.getFinalStates())
+			for (Rule rule : a.getStateRules(finalState)) {
+				if (rule.getSymbol() instanceof IdentSymbol)
+					isTrue = true;
+				else
+					isFalse = true;
+			}
+
+		return createBooleanAutomata(isTrue, isFalse);
+	}
+
 	public static Automata consProc(Automata car, Automata cdr) {
 		Automata pair = car.unionRules(cdr);
 		int finalState = pair.newState();
 		pair.addFinalState(finalState);
+		car.epsilonCloseFinalStates();
+		cdr.epsilonCloseFinalStates();
 		for (int stateCar : car.getFinalStates())
 			for (int stateCdr : cdr.getFinalStates()) {
 				ArrayList<Integer> args = new ArrayList<>();
@@ -42,5 +120,18 @@ public class Procedures {
 		if (b == null)
 			throw new NotSupportedProcedureException("cdr of not pair");
 		return b;
+	}
+
+	public static Automata equalsProc(Automata a,Automata b) {
+		Automata c = (Automata)a.clone();
+		c.intersect(b);
+		boolean isTrue = false;
+		boolean isFalse = false;
+		if (!c.isLanguageEmpty())
+			isTrue = true;
+		c.complement(a.getSymbolsSet());
+		if (!c.isLanguageEmpty())
+			isFalse = true;
+		return createBooleanAutomata(isTrue, isFalse);
 	}
 }

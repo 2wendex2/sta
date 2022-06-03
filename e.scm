@@ -1,6 +1,3 @@
-(define (a b)
-	(cons 'i (o b)))
+(define (a) 'tt)
 
-(s d)
-
-(define (o p )  (car (cdr p)))
+(define (b av bv) (cons av bv))

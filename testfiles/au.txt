@@ -4,13 +4,14 @@ def .+ from [
 	~pair(y, n) -> f;
 	epsilon n -> f;
 	.k() -> f;
+	
 	final f;
 ] [
 	final i;
 ] to [
+	~pair(u, q) -> r;
 	~null() -> p;
 	epsilon p -> i;
-	.y() -> l;
 	~pair(l, i) -> i;
 	final l;
 ]

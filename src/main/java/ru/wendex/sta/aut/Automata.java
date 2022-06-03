@@ -59,6 +59,7 @@ public class Automata implements Cloneable {
 		Automata a = new Automata();
 		a.rules = (ArrayList<Rule>)rules.clone();
 		a.finalStates = (ArrayList<Integer>)finalStates.clone();
+		a.epsilonRules = (ArrayList<EpsilonRule>)epsilonRules.clone();
 		a.stateCount = stateCount;
 		return a;
 	}
@@ -115,23 +116,25 @@ public class Automata implements Cloneable {
 	public void eliminateNotUsedStates() {
 		HashMap<Integer, Integer> statesMap = new HashMap<>();
 		stateCount = 0;
-		for (Rule rule : rules) {
+		for (int i = 0; i < rules.size(); i++) {
+			Rule rule = rules.get(i);
 			Integer newState = statesMap.get(rule.getRes());
 			if (newState == null) {
 				statesMap.put(rule.getRes(), stateCount);
 				newState = stateCount;
 				stateCount++;
 			}
-			rule.setRes(newState);
-			for (int i = 0; i < rule.getArgs().size(); i++) {
-				int arg = rule.getArgs().get(i);
+			rule = new Rule(rule.getSymbol(), rule.getArgs(), newState);
+			rules.set(i, rule);
+			for (int j = 0; j < rule.getArgs().size(); j++) {
+				int arg = rule.getArgs().get(j);
 				newState = statesMap.get(arg);
 				if (newState == null) {
 					statesMap.put(arg, stateCount);
 					newState = stateCount;
 					stateCount++;
 				}
-				rule.getArgs().set(i, newState);
+				rule.getArgs().set(j, newState);
 			}
 		}
 
@@ -163,9 +166,17 @@ public class Automata implements Cloneable {
 		}
 	}
 
-	public void complete() {
-		HashSet<RuleSignature> signatureSet = new HashSet<>();
+	public HashSet<Symbol> getSymbolsSet() {
 		HashSet<Symbol> symbolsSet = new HashSet<>();
+		for (Rule rule : rules) {
+			symbolsSet.add(rule.getSymbol());
+		}
+		return  symbolsSet;
+	}
+
+	public void complete(HashSet<Symbol> requiredSymbols) {
+		HashSet<RuleSignature> signatureSet = new HashSet<>();
+		HashSet<Symbol> symbolsSet = new HashSet<>(requiredSymbols);
 		for (Rule rule : rules) {
 			symbolsSet.add(rule.getSymbol());
 			signatureSet.add(new RuleSignature(rule.getSymbol(), rule.getArgs()));
@@ -259,9 +270,9 @@ public class Automata implements Cloneable {
 		finalStates = new ArrayList<>(newFinalStates);
 	}
 
-	public void complement() {
+	public void complement(HashSet<Symbol> requiredSymbolsSet) {
 		determine();
-		complete();
+		complete(requiredSymbolsSet);
 		HashSet<Integer> set = new HashSet<>(finalStates);
 		finalStates.clear();
 		for (int i = 0; i < stateCount; i++)
@@ -277,27 +288,27 @@ public class Automata implements Cloneable {
 
 		for (int i : finalStates)
 			for (int j : a.finalStates)
-				newFinalStates.add(i * stateCount + j);
+				newFinalStates.add(i * a.stateCount + j);
 		for (Rule rule1 : rules)
 			for (Rule rule2 : a.rules) {
 				if (rule1.getArgs().size() == rule2.getArgs().size() && rule1.getSymbol().equals(rule2.getSymbol())) {
 					ArrayList<Integer> newArgs = new ArrayList<>(rule1.getArgs().size());
 					for (int k = 0; k < rule1.getArgs().size(); k++)
-						newArgs.add(rule1.getArgs().get(k) * stateCount + rule2.getArgs().get(k));
-					newRules.add(new Rule(rule1.getSymbol(), newArgs, rule1.getRes() * stateCount + rule2.getRes()));
+						newArgs.add(rule1.getArgs().get(k) * a.stateCount + rule2.getArgs().get(k));
+					newRules.add(new Rule(rule1.getSymbol(), newArgs, rule1.getRes() * a.stateCount + rule2.getRes()));
 				}
 			}
 		for (EpsilonRule epsilonRule1 : epsilonRules) {
 			for (int state2 = 0; state2 < a.stateCount; state2++) {
-				newEpsilonRules.add(new EpsilonRule(epsilonRule1.getArg() * stateCount + state2,
-						epsilonRule1.getRes() * stateCount + state2));
+				newEpsilonRules.add(new EpsilonRule(epsilonRule1.getArg() * a.stateCount + state2,
+						epsilonRule1.getRes() * a.stateCount + state2));
 			}
 		}
 
 		for (EpsilonRule epsilonRule2 : a.epsilonRules) {
 			for (int state1 = 0; state1 < stateCount; state1++) {
-				newEpsilonRules.add(new EpsilonRule(state1 * stateCount + epsilonRule2.getArg(),
-						state1 * stateCount + epsilonRule2.getRes()));
+				newEpsilonRules.add(new EpsilonRule(state1 * a.stateCount + epsilonRule2.getArg(),
+						state1 * a.stateCount + epsilonRule2.getRes()));
 			}
 		}
 
@@ -307,7 +318,7 @@ public class Automata implements Cloneable {
 		epsilonRules = newEpsilonRules;
 	}
 
-	public boolean isLanguageEmpty() {
+	private HashSet<Integer> constructAccessible() {
 		HashSet<Integer> accessible = new HashSet<>();
 		boolean changed = true;
 		while (changed) {
@@ -335,6 +346,46 @@ public class Automata implements Cloneable {
 				changed = true;
 			}
 		}
+		return accessible;
+	}
+
+	public void eliminateNotAccessible() {
+		ArrayList<Integer> newFinalStates = new ArrayList<>();
+		ArrayList<Rule> newRules = new ArrayList<>();
+		ArrayList<EpsilonRule> newEpsilonRules = new ArrayList<>();
+
+		HashSet<Integer> accessible = constructAccessible();
+
+		ruleCycle:
+		for (Rule rule : rules) {
+			if (!accessible.contains(rule.getRes()))
+				continue;
+			for (int arg : rule.getArgs())
+				if (!accessible.contains(arg))
+					continue ruleCycle;
+			newRules.add(rule);
+		}
+
+		for (EpsilonRule epsilonRule : epsilonRules) {
+			if (!accessible.contains(epsilonRule.getRes()))
+				continue;
+			if (!accessible.contains(epsilonRule.getArg()))
+				continue;
+			newEpsilonRules.add(epsilonRule);
+		}
+
+		for (int finalState : finalStates)
+			if (accessible.contains(finalState))
+				newFinalStates.add(finalState);
+
+		finalStates = newFinalStates;
+		rules = newRules;
+		epsilonRules = newEpsilonRules;
+		eliminateNotUsedStates();
+	}
+
+	public boolean isLanguageEmpty() {
+		HashSet<Integer> accessible = constructAccessible();
 		for (int f : finalStates)
 			if (accessible.contains(f))
 				return false;
@@ -403,7 +454,11 @@ public class Automata implements Cloneable {
 			
 			r.addRule(new Rule(rule.getSymbol(), args, rule.getRes() + stateCount));
 		}
-		
+
+		r.epsilonRules.addAll(epsilonRules);
+		for (EpsilonRule epsilonRule : a.epsilonRules)
+			r.addEpsilonRule(new EpsilonRule(epsilonRule.getArg() + stateCount,
+					epsilonRule.getRes() + stateCount));
 		return r;
 	}
 	
@@ -413,11 +468,13 @@ public class Automata implements Cloneable {
 	
 	public void print() {
 		System.out.println("State count: " + stateCount);
-		System.out.println("Rules:");
-		for (Rule rule : rules)
-			System.out.println(rule);
-		for (EpsilonRule e : epsilonRules)
-			System.out.println(e);
+		if (rules.size() != 0 || epsilonRules.size() != 0) {
+			System.out.println("Rules:");
+			for (Rule rule : rules)
+				System.out.println(rule);
+			for (EpsilonRule e : epsilonRules)
+				System.out.println(e);
+		}
 		String s = "Final states: ";
 		for (int i : finalStates)
 			s += i + " ";

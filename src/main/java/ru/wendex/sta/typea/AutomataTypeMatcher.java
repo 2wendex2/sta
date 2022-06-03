@@ -6,16 +6,17 @@ import ru.wendex.sta.scm.NullNode;
 import ru.wendex.sta.scm.PairNode;
 import ru.wendex.sta.scm.SymbolNode;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Stack;
+import java.util.*;
 
 public class AutomataTypeMatcher {
     private Stack<HashMap<String, Automata>> varStack = new Stack<>();
     private HashMap<String, ScmFunction> funcs;
+    private HashMap<String, Automata> vars = new HashMap<>();
+    private HashMap<String, Node> varsNodes;
 
-    private AutomataTypeMatcher(HashMap<String, ScmFunction> fs) {
+    private AutomataTypeMatcher(HashMap<String, ScmFunction> fs, HashMap<String, Node> vs) {
         this.funcs = fs;
+        this.varsNodes = vs;
     }
 
     private Automata nodeAutomata(Node node) throws TypeMatcherException {
@@ -47,13 +48,24 @@ public class AutomataTypeMatcher {
         }
     }
 
+    private Automata globalVarAutomata(String name) throws TypeMatcherException, NotSupportedProcedureException {
+        Automata a = vars.get(name);
+        if (a == null) {
+            Node node = varsNodes.get(name);
+            if (node == null)
+                throw new TypeMatcherException("variable " + name + " not defined");
+            a = exprAutomata(node);
+        }
+        return a;
+    }
+
     private Automata exprAutomata(Node node) throws TypeMatcherException, NotSupportedProcedureException {
         if (node instanceof SymbolNode) {
             SymbolNode symNode = (SymbolNode)node;
-            HashMap<String, Automata> vars = varStack.peek();
-            Automata a = vars.get(symNode.getValue());
+            HashMap<String, Automata> localVars = varStack.peek();
+            Automata a = localVars.get(symNode.getValue());
             if (a == null) {
-                throw new TypeMatcherException("variable " + symNode.getValue() + " not defined");
+                a = globalVarAutomata(symNode.getValue());
             }
             return a;
         } else if (node instanceof PairNode) {
@@ -64,78 +76,36 @@ public class AutomataTypeMatcher {
             }
             SymbolNode exprSymbol = (SymbolNode)car;
             String fs = exprSymbol.getValue();
-            return route(fs, pairNode.getCdr());
+            return applyFunctionByNameToList(fs, pairNode.getCdr());
         } else {
             throw new TypeMatcherException("unsupported scheme expression");
         }
     }
 
-    private Automata route(String name, Node node) throws TypeMatcherException, NotSupportedProcedureException {
-        if (name.equals("cons")) {
-            if (!(node instanceof PairNode)) {
-                throw new TypeMatcherException("wrong cons argument 1");
-            }
-            Node car = ((PairNode)node).getCar();
-            Node node1 = ((PairNode)node).getCdr();
-            if (!(node1 instanceof PairNode)) {
-                throw new TypeMatcherException("wrong cons argument 2");
-            }
-            Node cdr = ((PairNode)node1).getCar();
-            Node node2 = ((PairNode)node1).getCdr();
-            if (!(node2 instanceof NullNode)) {
-                throw new TypeMatcherException("too many cons arguments");
-            }
-            Automata carAutomata = exprAutomata(car);
-            Automata cdrAutomata = exprAutomata(cdr);
-            return Procedures.consProc(carAutomata, cdrAutomata);
-        } else if (name.equals("car")) {
-            if (!(node instanceof PairNode)) {
-                throw new TypeMatcherException("wrong car argument ");
-            }
-            Node arg = ((PairNode)node).getCar();
-            Node node1 = ((PairNode)node).getCdr();
-            if (!(node1 instanceof NullNode)) {
-                throw new TypeMatcherException("too many car arguments");
-            }
-            Automata argAutomata = exprAutomata(arg);
-            return Procedures.carProc(argAutomata);
-        } else if (name.equals("cdr")) {
-            if (!(node instanceof PairNode)) {
-                throw new TypeMatcherException("wrong cdr argument ");
-            }
-            Node arg = ((PairNode)node).getCar();
-            Node node1 = ((PairNode)node).getCdr();
-            if (!(node1 instanceof NullNode)) {
-                throw new TypeMatcherException("too many cdr arguments");
-            }
-            Automata argAutomata = exprAutomata(arg);
-            return Procedures.cdrProc(argAutomata);
-        } else if (name.equals("quote")) {
-            if (!(node instanceof PairNode)) {
-                throw new TypeMatcherException("wrong quote argument");
-            }
-            Node arg = ((PairNode)node).getCar();
-            Node node1 = ((PairNode)node).getCdr();
-            if (!(node1 instanceof NullNode)) {
-                throw new TypeMatcherException("too many quote arguments");
-            }
-            return nodeAutomata(arg);
-        } else {
-            ScmFunction scmFunction = funcs.get(name);
-            if (scmFunction == null) {
-                throw new TypeMatcherException("unknown function " + name);
-            }
-            return applyFunctionToNode(scmFunction, node);
+    private Automata applyFunctionByNameToList(String name, Node node)
+            throws TypeMatcherException, NotSupportedProcedureException {
+        ScmFunction scmFunction = funcs.get(name);
+        if (scmFunction != null) {
+            return applyUserFunctionToList(scmFunction, node);
         }
+        if (!ScmData.STANDART_FUNCTIONS.contains(name)) {
+            throw new TypeMatcherException("function " + name + " not defined");
+        }
+        return applyStandardFunctionByNameToList(name, node);
     }
 
-    private Automata applyFunction(ScmFunction function, ArrayList<Automata> argsAutomata)
+    private Automata applyUserFunctionToAutomata(ScmFunction function, ArrayList<Automata> argsAutomata)
             throws TypeMatcherException, NotSupportedProcedureException {
         ArrayList<String> argsString = function.getArgs();
         if (argsString.size() != argsAutomata.size())
             throw new TypeMatcherException("apply function wrong arguments count");
         HashMap<String, Automata> argMap = new HashMap<>();
         for (int i = 0; i < argsAutomata.size(); i++) {
+            String argString = argsString.get(i);
+            if (funcs.containsKey(argString) || vars.containsKey(argString) ||
+                    ScmData.STANDART_FUNCTIONS.contains(argString) || argMap.containsKey(argString)) {
+                throw new TypeMatcherException("Duplicate argument name " + argString);
+            }
             argMap.put(argsString.get(i), argsAutomata.get(i));
         }
         varStack.push(argMap);
@@ -144,7 +114,7 @@ public class AutomataTypeMatcher {
         return r;
     }
 
-    private Automata applyFunctionToNode(ScmFunction function, Node node)
+    private Automata applyUserFunctionToList(ScmFunction function, Node node)
             throws TypeMatcherException, NotSupportedProcedureException {
         ArrayList<Automata> argsAutomata = new ArrayList<>();
         Node curNode = node;
@@ -157,36 +127,88 @@ public class AutomataTypeMatcher {
             argsAutomata.add(exprAutomata(pairNode.getCar()));
             curNode = pairNode.getCdr();
         }
-        return applyFunction(function, argsAutomata);
+        return applyUserFunctionToAutomata(function, argsAutomata);
+    }
+
+    private Automata applyStandardFunctionByNameToList(String name, Node node)
+            throws TypeMatcherException, NotSupportedProcedureException {
+        ArrayList<Node> args = new ArrayList<>();
+        Node curNode = node;
+        for (;;) {
+            if (curNode instanceof NullNode)
+                break;
+            if (!(curNode instanceof PairNode))
+                throw new TypeMatcherException("wrong function arguments list");
+            PairNode pairNode = (PairNode)curNode;
+            args.add(pairNode.getCar());
+            curNode = pairNode.getCdr();
+        }
+        switch (name) {
+            case "cons":
+                if (args.size() != 2)
+                    throw new TypeMatcherException("cons required 2 arguments");
+                return Procedures.consProc(exprAutomata(args.get(0)), exprAutomata(args.get(1)));
+            case "car":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("car required 2 arguments");
+                return Procedures.carProc(exprAutomata(args.get(0)));
+            case "cdr":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("cdr required 2 arguments");
+                return Procedures.cdrProc(exprAutomata(args.get(0)));
+            case "quote":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("quote required 1 arguments");
+                return nodeAutomata(args.get(0));
+            case "null?":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("null? required 1 arguments");
+                return Procedures.isNull(exprAutomata(args.get(0)));
+            case "boolean?":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("boolean? required 1 arguments");
+                return Procedures.isBoolean(exprAutomata(args.get(0)));
+            case "pair?":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("pair? required 1 arguments");
+                return Procedures.isNull(exprAutomata(args.get(0)));
+            default:
+                throw new TypeMatcherException("Standard function " + name + " not supported");
+        }
     }
 
     public static TypeMatcherReport match(TypeaData typeaData, ScmData scmData)
-            throws TypeMatcherException, NotSupportedProcedureException {
-        AutomataTypeMatcher matcher = new AutomataTypeMatcher(scmData.getFuncs());
+            throws NotSupportedProcedureException {
+        AutomataTypeMatcher matcher = new AutomataTypeMatcher(scmData.getFuncs(), scmData.getVars());
+        ArrayList<FunctionReport> functionReports = new ArrayList<>();
+        boolean isGlobalMatch = true;
         for (TypeaFunction tf : typeaData.getFuncs()) {
-            String name = tf.getName();
-            ScmFunction sf = matcher.funcs.get(name);
-            if (sf == null) {
-                throw new TypeMatcherException("function " + name + " not defined");
-            }
-            Automata a = matcher.applyFunction(sf, tf.getArgs());
-            Automata b = tf.getRes();
+            try {
+                String name = tf.getName();
+                ScmFunction sf = matcher.funcs.get(name);
+                if (sf == null) {
+                    throw new TypeMatcherException("function " + name + " not defined");
+                }
 
-            System.out.println("DEF");
-            a.print();
-            System.out.println("DEC");
-            b.print();
-            b.eliminateEpsilonRules();
-            b.complement();
-            System.out.println("COMPL");
-            b.print();
-            a.intersect(b);
-            Automata c = a;
-            System.out.println("INTRSCT");
-            c.print();
-            if (!c.isLanguageEmpty())
-                return new TypeMatcherReport(true);
+                Automata a = matcher.applyUserFunctionToAutomata(sf, tf.getArgs());
+                Automata b = tf.getRes();
+
+                //a.print();
+                Automata c = (Automata) b.clone();
+                //c.print();
+                c.complement(a.getSymbolsSet());
+                //c.print();
+                //a.print();
+                c.intersect(a);
+                //c.print();
+                boolean isMatch = c.isLanguageEmpty();
+                functionReports.add(new FunctionReport(tf, a, isMatch, null));
+                isGlobalMatch = isGlobalMatch && isMatch;
+            } catch (TypeMatcherException exception) {
+                functionReports.add(new FunctionReport(tf, null, false, exception));
+                isGlobalMatch = false;
+            }
         }
-        return new TypeMatcherReport(false);
+        return new TypeMatcherReport(isGlobalMatch, functionReports);
     }
 }
