@@ -1,6 +1,7 @@
 package ru.wendex.sta.aut;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 public class Procedures {
 	private static Automata createBooleanAutomata(boolean isTrue, boolean isFalse) {
@@ -133,5 +134,41 @@ public class Procedures {
 		if (!c.isLanguageEmpty())
 			isFalse = true;
 		return createBooleanAutomata(isTrue, isFalse);
+	}
+
+	public static Automata isList(Automata a) {
+		boolean isTrue = false;
+		boolean isFalse = false;
+		HashSet<Integer> cStates = new HashSet<>();
+		HashSet<Integer> vStates = new HashSet<>();
+		a.eliminateEpsilonRules();
+		for (Integer finalState : a.getFinalStates())
+			cStates.add(finalState);
+		while (!cStates.isEmpty()) {
+			for (Integer cState : cStates) {
+				if (vStates.contains(cState))
+					continue;
+				for (Rule rule : a.getStateRules(cState)) {
+					if (rule.getSymbol() == KeySymbol.NULL)
+						isTrue = true;
+					else if (rule.getSymbol() == KeySymbol.PAIR) {
+						cStates.add(rule.getArgs().get(1));
+					} else
+						isFalse = true;
+				}
+				vStates.add(cState);
+			}
+		}
+		return createBooleanAutomata(isTrue, isFalse);
+	}
+
+	public static Automata listProc(ArrayList<Automata> auts) {
+		return listProcRec(auts, 0);
+	}
+
+	private static Automata listProcRec(ArrayList<Automata> auts, int ind) {
+		if (ind == auts.size())
+			return Automata.createNull();
+		return consProc(auts.get(ind), listProcRec(auts, ind + 1));
 	}
 }

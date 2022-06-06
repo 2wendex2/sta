@@ -172,6 +172,21 @@ public class AutomataTypeMatcher {
                 if (args.size() != 1)
                     throw new TypeMatcherException("pair? required 1 arguments");
                 return Procedures.isNull(exprAutomata(args.get(0)));
+            case "equals?":
+                if (args.size() != 2)
+                    throw new TypeMatcherException("equals? required 2 arguments");
+                return Procedures.equalsProc(exprAutomata(args.get(0)), exprAutomata(args.get(1)));
+            case "list?":
+                if (args.size() != 1)
+                    throw new TypeMatcherException("list? required 1 arguments");
+                return Procedures.isList(exprAutomata(args.get(0)));
+            case "list": {
+                ArrayList<Automata> lst = new ArrayList<>();
+                for (Node nodeit : args) {
+                    lst.add(exprAutomata(nodeit));
+                }
+                return Procedures.listProc(lst);
+            }
             default:
                 throw new TypeMatcherException("Standard function " + name + " not supported");
         }
