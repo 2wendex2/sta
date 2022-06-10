@@ -485,7 +485,7 @@ public class Lexer {
 				pos.next();
 			else if (c == (int)';') {
 				pos.next();
-				while (!Position.isNewline(pos.peek()) || pos.peek() != Position.EOF_CHAR)
+				while (!Position.isNewline(pos.peek()) && pos.peek() != Position.EOF_CHAR)
 					pos.next();
 			} else
 				break;

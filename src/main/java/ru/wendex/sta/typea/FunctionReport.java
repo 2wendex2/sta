@@ -10,9 +10,9 @@ public class FunctionReport {
     private String name;
     private ArrayList<Automata> args;
     private Automata declRes;
-    private TypeMatcherException exception;
+    private Exception exception;
 
-    public FunctionReport(TypeaFunction f, Automata res, boolean isMatch, TypeMatcherException exception) {
+    public FunctionReport(TypeaFunction f, Automata res, boolean isMatch, Exception exception) {
         this.isMatch = isMatch;
         this.exception = exception;
         this.defRes = res;
@@ -41,7 +41,7 @@ public class FunctionReport {
         return declRes;
     }
 
-    public TypeMatcherException getException() {
+    public Exception getException() {
         return exception;
     }
 

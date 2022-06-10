@@ -34,13 +34,12 @@ public class AutomataTypeMatcher {
             automata.addRule(new Rule(new IdentSymbol(((SymbolNode)node).getValue()), new ArrayList<>(), curState));
         } else if (node instanceof PairNode) {
             PairNode pairNode = (PairNode)node;
-            int f = automata.newState();
             ArrayList<Integer> args = new ArrayList<>();
             int carState = automata.newState();
             int cdrState = automata.newState();
             args.add(carState);
             args.add(cdrState);
-            automata.addRule(new Rule(KeySymbol.PAIR, args, f));
+            automata.addRule(new Rule(KeySymbol.PAIR, args, curState));
             nodeAutomataRec(automata, pairNode.getCar(), carState);
             nodeAutomataRec(automata, pairNode.getCdr(), cdrState);
         } else {
@@ -160,35 +159,103 @@ public class AutomataTypeMatcher {
                 if (args.size() != 1)
                     throw new TypeMatcherException("quote required 1 arguments");
                 return nodeAutomata(args.get(0));
-            case "null?":
-                if (args.size() != 1)
-                    throw new TypeMatcherException("null? required 1 arguments");
-                return Procedures.isNull(exprAutomata(args.get(0)));
-            case "boolean?":
-                if (args.size() != 1)
-                    throw new TypeMatcherException("boolean? required 1 arguments");
-                return Procedures.isBoolean(exprAutomata(args.get(0)));
-            case "pair?":
-                if (args.size() != 1)
-                    throw new TypeMatcherException("pair? required 1 arguments");
-                return Procedures.isNull(exprAutomata(args.get(0)));
-            case "equals?":
-                if (args.size() != 2)
-                    throw new TypeMatcherException("equals? required 2 arguments");
-                return Procedures.equalsProc(exprAutomata(args.get(0)), exprAutomata(args.get(1)));
-            case "list?":
-                if (args.size() != 1)
-                    throw new TypeMatcherException("list? required 1 arguments");
-                return Procedures.isList(exprAutomata(args.get(0)));
-            case "list": {
-                ArrayList<Automata> lst = new ArrayList<>();
-                for (Node nodeit : args) {
-                    lst.add(exprAutomata(nodeit));
-                }
-                return Procedures.listProc(lst);
-            }
+            case "if":
+                if (args.size() != 3)
+                    throw new TypeMatcherException("if required 3 arguments");
+                return applyIf(args.get(0), args.get(1), args.get(2));
             default:
                 throw new TypeMatcherException("Standard function " + name + " not supported");
+        }
+    }
+
+    public Automata applyIf(Node cond, Node trueNode, Node falseNode)
+            throws TypeMatcherException, NotSupportedProcedureException {
+        if (!(cond instanceof PairNode))
+            throw new TypeMatcherException("if condition must be pair expression");
+        Node condCar = ((PairNode)cond).getCar();
+        if (!(condCar instanceof SymbolNode))
+            throw new TypeMatcherException("if condition expression car must be symbol");
+        ArrayList<Node> args = new ArrayList<>();
+        Node curNode = ((PairNode)cond).getCdr();
+        while (!(curNode instanceof NullNode)) {
+            if (!(curNode instanceof PairNode))
+                throw new TypeMatcherException("wrong if condition arguments list");
+            PairNode pairNode = (PairNode) curNode;
+            args.add(pairNode.getCar());
+            curNode = pairNode.getCdr();
+        }
+        String name = ((SymbolNode)condCar).getValue();
+        switch (name) {
+            case "null?": {
+                if (args.size() != 1)
+                    throw new TypeMatcherException("null? required 1 argument");
+                Node nullArg = args.get(0);
+                if (!(nullArg instanceof SymbolNode))
+                    throw new TypeMatcherException("null? argument must be symbol");
+                String nullArgName = ((SymbolNode)nullArg).getValue();
+                HashMap<String, Automata> vars = varStack.peek();
+                Automata nullArgAutomata = vars.get(nullArgName);
+                if (nullArgAutomata == null)
+                    throw new TypeMatcherException("null? argument must function parameter");
+                Automata notNullAutomata = (Automata)nullArgAutomata.clone();
+                notNullAutomata.remove0Symbol(KeySymbol.NULL);
+                if (nullArgAutomata.isPresent(KeySymbol.NULL)) {
+                    if (notNullAutomata.isLanguageEmpty()) {
+                        return exprAutomata(trueNode);
+                    } else {
+                        vars.put(nullArgName, Automata.createNull());
+                        Automata trueAutomata = exprAutomata(trueNode);
+                        vars.put(nullArgName, notNullAutomata);
+                        Automata falseAutomata = exprAutomata(falseNode);
+                        vars.put(nullArgName, nullArgAutomata);
+                        return trueAutomata.unionN(falseAutomata);
+                    }
+                } else {
+                    return exprAutomata(falseNode);
+                }
+            }
+            case "equals?": {
+                if (args.size() != 2)
+                    throw new TypeMatcherException("equals? required 2 arguments");
+                Node arg1 = args.get(0);
+                Node arg2 = args.get(1);
+                HashMap<String, Automata> vars = varStack.peek();
+                if (!(arg1 instanceof SymbolNode) || !vars.containsKey(((SymbolNode)arg1).getValue())) {
+                    if (!(arg2 instanceof SymbolNode) || !vars.containsKey(((SymbolNode)arg2).getValue())) {
+                        throw new TypeMatcherException("one of equals? argument must be function parameter");
+                    }
+                    Node argt = arg1;
+                    arg1 = arg2;
+                    arg2 = argt;
+                }
+
+                String argName = ((SymbolNode)arg1).getValue();
+                Automata argAutomata = vars.get(argName);
+                vars.remove(argName);
+                Automata ptAutomata = exprAutomata(arg2);
+                vars.put(argName, argAutomata);
+
+                Automata substractAutomata = (Automata)ptAutomata.clone();
+                substractAutomata.substractFrom(argAutomata);
+                Automata intersectAutomata = (Automata)argAutomata.clone();
+                intersectAutomata.intersect(ptAutomata);
+                if (intersectAutomata.isLanguageEmpty()) {
+                    return exprAutomata(falseNode);
+                } else {
+                    if (substractAutomata.isLanguageEmpty()) {
+                        return exprAutomata(trueNode);
+                    } else {
+                        vars.put(argName, intersectAutomata);
+                        Automata trueAutomata = exprAutomata(trueNode);
+                        vars.put(argName, substractAutomata);
+                        Automata falseAutomata = exprAutomata(falseNode);
+                        vars.put(argName, argAutomata);
+                        return trueAutomata.unionN(falseAutomata);
+                    }
+                }
+            }
+            default:
+                throw new TypeMatcherException("Conditional function " + name + " not supported");
         }
     }
 
@@ -219,7 +286,7 @@ public class AutomataTypeMatcher {
                 boolean isMatch = c.isLanguageEmpty();
                 functionReports.add(new FunctionReport(tf, a, isMatch, null));
                 isGlobalMatch = isGlobalMatch && isMatch;
-            } catch (TypeMatcherException exception) {
+            } catch (TypeMatcherException | NotSupportedProcedureException exception) {
                 functionReports.add(new FunctionReport(tf, null, false, exception));
                 isGlobalMatch = false;
             }

@@ -181,10 +181,6 @@ public class Parser {
 			symbol = KeySymbol.NULL;
 		else if (s.equals("pair"))
 			symbol = KeySymbol.PAIR;
-		else if (s.equals("true"))
-			symbol = KeySymbol.TRUE;
-		else if (s.equals("false"))
-			symbol = KeySymbol.FALSE;
 		else
 			throw new ParserException("Unknown spec symbol\n" + lexer.peek().toString());
 		lexer.next();

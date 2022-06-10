@@ -7,7 +7,7 @@ public class Automata implements Cloneable {
 	private ArrayList<Integer> finalStates;
 	private ArrayList<EpsilonRule> epsilonRules;
 	private int stateCount;
-	
+
 	private Automata() {}
 
 	public Automata(int stateCount, ArrayList<Rule> rules, ArrayList<EpsilonRule> epsilonRules,
@@ -30,20 +30,6 @@ public class Automata implements Cloneable {
 	public static Automata createNull() {
 		Automata a = createEmpty();
 		a.addRuleSafe(new Rule(KeySymbol.NULL, new ArrayList<>(), 0));
-		a.addFinalState(0);
-		return a;
-	}
-
-	public static Automata createTrue() {
-		Automata a = createEmpty();
-		a.addRuleSafe(new Rule(KeySymbol.TRUE, new ArrayList<>(), 0));
-		a.addFinalState(0);
-		return a;
-	}
-
-	public static Automata createFalse() {
-		Automata a = createEmpty();
-		a.addRuleSafe(new Rule(KeySymbol.TRUE, new ArrayList<>(), 0));
 		a.addFinalState(0);
 		return a;
 	}
@@ -397,11 +383,18 @@ public class Automata implements Cloneable {
 		a.rules = (ArrayList<Rule>)rules.clone();
 		a.stateCount = stateCount;
 		a.finalStates = new ArrayList<>();
+		a.epsilonRules = new ArrayList<>();
 		return a;
 	}
 	
+	public Automata unionN(Automata a) {
+		Automata r = unionRulesN(a);
+		r.finalStates.addAll(finalStates);
+		for (int finalState : a.finalStates)
+			r.finalStates.add(finalState + stateCount);
+		return r;
+	}
 
-	
 	public int newState() {
 		stateCount++;
 		return stateCount - 1;
@@ -433,7 +426,12 @@ public class Automata implements Cloneable {
 	public ArrayList<Integer> getFinalStates() {
 		return finalStates;
 	}
-	
+
+	public ArrayList<Integer> getClosedFinalStates() {
+		epsilonCloseFinalStates();
+		return finalStates;
+	}
+
 	public ArrayList<Rule> getRules() {
 		return rules;
 	}
@@ -442,7 +440,7 @@ public class Automata implements Cloneable {
 		return () -> new RuleResIterator(rules, state);
 	}
 	
-	public Automata unionRules(Automata a) {
+	public Automata unionRulesN(Automata a) {
 		Automata r = Automata.createEmpty();
 		r.rules = (ArrayList<Rule>)rules.clone();
 		r.stateCount = stateCount + a.stateCount;
@@ -486,15 +484,79 @@ public class Automata implements Cloneable {
 		epsilonRules.add(epsilonRule);
 	}
 
+	public boolean isPresent(Symbol symbol) {
+		HashSet<Integer> accessible = new HashSet<>();
+		for (Rule rule : rules)
+			if (rule.getSymbol().equals(symbol))
+				accessible.add(rule.getRes());
+		boolean changed = true;
+		while (changed) {
+			changed = false;
+			ruleCycle:
+			for (Rule rule : rules) {
+				if (accessible.contains(rule.getRes()) || rule.getArgs().size() == 0)
+					continue;
+				for (int s : rule.getArgs()) {
+					if (!accessible.contains(s)) {
+						continue ruleCycle;
+					}
+				}
 
+				accessible.add(rule.getRes());
+				changed = true;
+			}
 
+			for (EpsilonRule epsilonRule : epsilonRules){
+				if (accessible.contains(epsilonRule.getRes()))
+					continue;
+				if (!accessible.contains(epsilonRule.getArg()))
+					continue;
+				accessible.add(epsilonRule.getRes());
+				changed = true;
+			}
+		}
+		for (int i : finalStates)
+			if (accessible.contains(i))
+				return true;
+		return false;
+	}
 
+	public void remove0Symbol(Symbol symbol) {
+		eliminateEpsilonRules();
+		HashSet<Integer> symbolStates = new HashSet<>();
+		for (Rule rule : rules)
+			if (rule.getSymbol().equals(symbol))
+				symbolStates.add(rule.getRes());
+		HashSet<Integer> newFinalComplement = new HashSet<>();
+		for (int finalState : finalStates)
+			if (symbolStates.contains(finalState)) {
+				newFinalComplement.add(finalState);
+				int n = rules.size();
+				for (int i = 0; i < n; i++)
+					if (rules.get(i).getRes() == finalState && !rules.get(i).getSymbol().equals(symbol))
+						rules.add(new Rule(rules.get(i).getSymbol(), rules.get(i).getArgs(), stateCount));
+			}
+		ArrayList<Integer> newFinalStates = new ArrayList<>();
+		for (int i : finalStates)
+			if (!newFinalComplement.contains(i))
+				newFinalStates.add(i);
+		newFinalStates.add(stateCount);
+		stateCount++;
+		finalStates = newFinalStates;
+	}
 
+	public void substractFrom(Automata b) {
+		complement(b.getSymbolsSet());
+		intersect(b);
+	}
 
+	public boolean isSubAutomata(Automata other) {
+		Automata c = (Automata)other.clone();
+		c.substractFrom(this);
+		return c.isLanguageEmpty();
+	}
 
-
-
-
-
-
+	public boolean isEquivalent(Automata other) {
+		return this.isSubAutomata(other) && other.isSubAutomata(this);
+	}
 }

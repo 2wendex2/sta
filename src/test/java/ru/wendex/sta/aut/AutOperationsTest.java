@@ -60,7 +60,5 @@ public class AutOperationsTest {
         Automata b = f.getRes();
 
         b.print();
-        Automata c = Procedures.isNull(b);
-        c.print();
     }
 }

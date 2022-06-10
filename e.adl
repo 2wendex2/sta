@@ -1,22 +1,26 @@
 
 
-def .a to [
-	.tt() -> tt;
-	.a() -> tt;
-	final tt;
-]
-
-def .b from [
+def .flat-even from [
 	.a() -> a;
-	final a;
-] [
+	~null() -> a;
 	.b() -> b;
-	final b;
+	
+	'~null() -> lst;
+	~pair(b, lst) -> tail;
+	~pair(a, tail) -> lst;
+	
+	~null() -> biglst;
+	~pair(lst, biglst) -> biglst;
+	
+	final biglst;'
+	final a;
 ] to [
 	.a() -> a;
 	.b() -> b;
-	~pair(a, b) -> c;
-	final c;
+	
+	~null() -> lst;
+	~pair(b, lst) -> tail;
+	~pair(a, tail) -> lst;
+	
+	final lst;
 ]
-
-
