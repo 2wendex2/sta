@@ -34,6 +34,13 @@ public class Automata implements Cloneable {
 		return a;
 	}
 
+	public static Automata createVar(int var) {
+		Automata a = createEmpty();
+		a.addRuleSafe(new Rule(new VarSymbol(var), new ArrayList<>(), 0));
+		a.addFinalState(0);
+		return a;
+	}
+
 	public static Automata createSymbol(String name) {
 		Automata a = createEmpty();
 		a.addRuleSafe(new Rule(new IdentSymbol(name), new ArrayList<>(), 0));
@@ -197,6 +204,10 @@ public class Automata implements Cloneable {
 		boolean changed = true;
 		while (changed) {
 			changed = false;
+
+			//newResStates -- map из сигнатуры правила в множество состояний. Состоит из всех ещё не добавленных правил
+			//таких, что их аргументы уже построены. В качестве результата выступает пока что множество старых состояний
+			//Цикл строит новую итерацию newResStates
 			HashMap<RuleSignature, HashSet<Integer>> newResStates = new HashMap<>();
 			for (Rule rule : rules) {
 				DetArgsEnumerator ait = DetArgsEnumerator.createFromOldArgs(rule.getArgs(), stateToNew);
@@ -209,7 +220,7 @@ public class Automata implements Cloneable {
 						HashSet<Integer> newResState = newResStates.get(signature);
 						if (newResState == null) {
 							newResState = new HashSet<>();
-							newResStates.put(signature, newResState);
+							newResStates.put(new RuleSignature(rule.getSymbol(), (ArrayList<Integer>)newArgs.clone()), newResState);
 						}
 						newResState.add(rule.getRes());
 					}
@@ -218,13 +229,19 @@ public class Automata implements Cloneable {
 				}
 			}
 
+			//Проходимся по каждому правилу, что должно быть добавлено на итерации (из newResStates)
+
 			for (Map.Entry<RuleSignature, HashSet<Integer>> entry : newResStates.entrySet()) {
-				changed = true;
 				RuleSignature signature = entry.getKey();
 				HashSet<Integer> oldStateSet = entry.getValue();
 
+				//Для состояния-множества, в которое переходит правило вычисляем номер в новом автомате
+				//Добавляем его в 2 соответствующих map'a:
+				//stateToNew -- по старому состоянию получаем ArrayList новых
+				//newStatesMap -- по состоянию-множеству получаем соответствующее состояние-число в новом автомате
 				Integer newStateInt = newStatesMap.get(oldStateSet);
 				if (newStateInt == null) {
+					changed = true;
 					newStateInt = newStateCount;
 					newStateCount++;
 					newStatesMap.put(oldStateSet, newStateInt);
@@ -557,6 +574,45 @@ public class Automata implements Cloneable {
 	}
 
 	public boolean isEquivalent(Automata other) {
+		boolean t1 = this.isSubAutomata(other);
+		boolean t2 = other.isSubAutomata(this);
 		return this.isSubAutomata(other) && other.isSubAutomata(this);
+	}
+
+	public void substitute(int var, Automata a) {
+		for (Rule rule : a.rules) {
+			ArrayList<Integer> args = new ArrayList<>();
+			for (int i : rule.getArgs())
+				args.add(i + stateCount);
+			rules.add(new Rule(rule.getSymbol(), args, rule.getRes() + stateCount));
+		}
+		for (EpsilonRule epsilonRule : a.epsilonRules)
+			epsilonRules.add(new EpsilonRule(epsilonRule.getArg() + stateCount, epsilonRule.getRes() + stateCount));
+		int n = rules.size();
+		for (int k = 0; k < n; k++) {
+			Symbol symbol = rules.get(k).getSymbol();
+			if (symbol instanceof VarSymbol && ((VarSymbol)symbol).getVar() == var) {
+				for (int i : a.finalStates) {
+					epsilonRules.add(new EpsilonRule(i, rules.get(k).getRes()));
+				}
+				rules.set(k, rules.get(rules.size() - 1));
+				rules.remove(rules.size() - 1);
+			}
+		}
+		stateCount += a.stateCount;
+	}
+
+	public void substituteFinal(int var) {
+		for (int k = 0; k < rules.size(); k++) {
+			Symbol symbol = rules.get(k).getSymbol();
+			if (symbol instanceof VarSymbol && ((VarSymbol)symbol).getVar() == var) {
+				for (int i : finalStates) {
+					epsilonRules.add(new EpsilonRule(i, rules.get(k).getRes()));
+				}
+				rules.set(k, rules.get(rules.size() - 1));
+				rules.remove(rules.size() - 1);
+				k--;
+			}
+		}
 	}
 }

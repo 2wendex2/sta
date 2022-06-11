@@ -8,8 +8,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 public class ScmData {
-	public static final HashSet<String> STANDART_FUNCTIONS = new HashSet<>(Arrays.asList("cons", "car", "cdr",
-			"quote", "null?", "symbol?", "boolean?", "equals?", "if"));
+	public static final HashSet<String> STANDARD_FUNCTIONS = new HashSet<>(Arrays.asList("cons", "car", "cdr",
+			"quote", "null?", "equals?", "if"));
 
 	private HashMap<String, ScmFunction> funcs;
 	private HashMap<String, Node> vars;

@@ -2,6 +2,7 @@ package ru.wendex.sta;
 
 import org.junit.jupiter.api.Test;
 import ru.wendex.sta.adl.FunctionList;
+import ru.wendex.sta.adl.SemanticException;
 import ru.wendex.sta.aut.NotSupportedProcedureException;
 import ru.wendex.sta.langbase.ParserException;
 import ru.wendex.sta.langbase.Position;
@@ -16,7 +17,7 @@ import java.io.IOException;
 
 public class MainTest {
     @Test
-    public void mainTest() throws IOException, ParserException, ScmToAutException, NotSupportedProcedureException {
+    public void mainTest() throws IOException, ParserException, ScmToAutException, NotSupportedProcedureException, SemanticException {
         FileReader fr1 = new FileReader("e.scm");
         Position pos1 = new Position(fr1);
         Lexer lexer1 = new Lexer(pos1);

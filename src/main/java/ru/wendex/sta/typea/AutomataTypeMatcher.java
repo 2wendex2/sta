@@ -14,6 +14,9 @@ public class AutomataTypeMatcher {
     private HashMap<String, Automata> vars = new HashMap<>();
     private HashMap<String, Node> varsNodes;
 
+    private int autovarCount = 0;
+    private HashMap<String, ArrayList<AutovarSignature>> autovars = new HashMap<>();
+
     private AutomataTypeMatcher(HashMap<String, ScmFunction> fs, HashMap<String, Node> vs) {
         this.funcs = fs;
         this.varsNodes = vs;
@@ -87,7 +90,7 @@ public class AutomataTypeMatcher {
         if (scmFunction != null) {
             return applyUserFunctionToList(scmFunction, node);
         }
-        if (!ScmData.STANDART_FUNCTIONS.contains(name)) {
+        if (!ScmData.STANDARD_FUNCTIONS.contains(name)) {
             throw new TypeMatcherException("function " + name + " not defined");
         }
         return applyStandardFunctionByNameToList(name, node);
@@ -95,6 +98,19 @@ public class AutomataTypeMatcher {
 
     private Automata applyUserFunctionToAutomata(ScmFunction function, ArrayList<Automata> argsAutomata)
             throws TypeMatcherException, NotSupportedProcedureException {
+        ArrayList<AutovarSignature> autovarLst = autovars.get(function.getName());
+        if (autovarLst != null) {
+            for (AutovarSignature autovarSignature : autovarLst)
+                if (autovarSignature.checkArgs(argsAutomata))
+                    return Automata.createVar(autovarSignature.getAutovar());
+        } else {
+            autovarLst = new ArrayList<>();
+            autovars.put(function.getName(), autovarLst);
+        }
+        int curAutovar = autovarCount;
+        autovarCount++;
+        autovarLst.add(new AutovarSignature(curAutovar, argsAutomata));
+
         ArrayList<String> argsString = function.getArgs();
         if (argsString.size() != argsAutomata.size())
             throw new TypeMatcherException("apply function wrong arguments count");
@@ -102,7 +118,7 @@ public class AutomataTypeMatcher {
         for (int i = 0; i < argsAutomata.size(); i++) {
             String argString = argsString.get(i);
             if (funcs.containsKey(argString) || vars.containsKey(argString) ||
-                    ScmData.STANDART_FUNCTIONS.contains(argString) || argMap.containsKey(argString)) {
+                    ScmData.STANDARD_FUNCTIONS.contains(argString) || argMap.containsKey(argString)) {
                 throw new TypeMatcherException("Duplicate argument name " + argString);
             }
             argMap.put(argsString.get(i), argsAutomata.get(i));
@@ -110,6 +126,8 @@ public class AutomataTypeMatcher {
         varStack.push(argMap);
         Automata r = exprAutomata(function.getBody());
         varStack.pop();
+        autovarLst.remove(autovarLst.size() - 1);
+        r.substituteFinal(curAutovar);
         return r;
     }
 
@@ -259,8 +277,7 @@ public class AutomataTypeMatcher {
         }
     }
 
-    public static TypeMatcherReport match(TypeaData typeaData, ScmData scmData)
-            throws NotSupportedProcedureException {
+    public static TypeMatcherReport match(TypeaData typeaData, ScmData scmData) {
         AutomataTypeMatcher matcher = new AutomataTypeMatcher(scmData.getFuncs(), scmData.getVars());
         ArrayList<FunctionReport> functionReports = new ArrayList<>();
         boolean isGlobalMatch = true;
@@ -269,21 +286,16 @@ public class AutomataTypeMatcher {
                 String name = tf.getName();
                 ScmFunction sf = matcher.funcs.get(name);
                 if (sf == null) {
-                    throw new TypeMatcherException("function " + name + " not defined");
+                    if (ScmData.STANDARD_FUNCTIONS.contains(name))
+                        throw new TypeMatcherException("function " + name + " is standard function");
+                    else
+                        throw new TypeMatcherException("function " + name + " not defined");
                 }
 
                 Automata a = matcher.applyUserFunctionToAutomata(sf, tf.getArgs());
                 Automata b = tf.getRes();
 
-                //a.print();
-                Automata c = (Automata) b.clone();
-                //c.print();
-                c.complement(a.getSymbolsSet());
-                //c.print();
-                //a.print();
-                c.intersect(a);
-                //c.print();
-                boolean isMatch = c.isLanguageEmpty();
+                boolean isMatch = a.isSubAutomata(b);
                 functionReports.add(new FunctionReport(tf, a, isMatch, null));
                 isGlobalMatch = isGlobalMatch && isMatch;
             } catch (TypeMatcherException | NotSupportedProcedureException exception) {

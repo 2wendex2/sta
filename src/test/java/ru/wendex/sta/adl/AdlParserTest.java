@@ -9,7 +9,7 @@ import java.io.*;
 
 public class AdlParserTest {
 	@Test
-	public void pstTest() throws IOException, ParserException {
+	public void pstTest() throws IOException, ParserException, SemanticException {
 		FileReader fr = new FileReader("testfiles/au.txt");
 		Position pos = new Position(fr);
 		Lexer lexer = new Lexer(pos);

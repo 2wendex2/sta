@@ -8,7 +8,7 @@ import java.io.*;
 
 public class AdlScmConverterTest {
 	@Test
-	public void adlScmConverterTest() throws IOException, ParserException {
+	public void adlScmConverterTest() throws IOException, ParserException, SemanticException {
 		FileReader fr = new FileReader("testfiles/adlmain.txt");
 		Position pos = new Position(fr);
 		Lexer lexer = new Lexer(pos);

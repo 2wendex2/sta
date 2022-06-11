@@ -1,10 +1,7 @@
 package ru.wendex.sta.aut;
 
 import org.junit.jupiter.api.Test;
-import ru.wendex.sta.adl.Function;
-import ru.wendex.sta.adl.FunctionList;
-import ru.wendex.sta.adl.Lexer;
-import ru.wendex.sta.adl.Parser;
+import ru.wendex.sta.adl.*;
 import ru.wendex.sta.langbase.ParserException;
 import ru.wendex.sta.langbase.Position;
 
@@ -16,7 +13,7 @@ import java.util.Scanner;
 
 public class AutOperationsTest {
     @Test
-    public void rdTest() throws IOException, ParserException {
+    public void rdTest() throws IOException, ParserException, SemanticException {
         FileReader fr = new FileReader("testfiles/au.txt");
         Position pos = new Position(fr);
         Lexer lexer = new Lexer(pos);
@@ -49,7 +46,7 @@ public class AutOperationsTest {
     }
 
     @Test
-    public void procTest() throws IOException, ParserException {
+    public void procTest() throws IOException, ParserException, SemanticException {
         FileReader fr = new FileReader("testfiles/au.txt");
         Position pos = new Position(fr);
         Lexer lexer = new Lexer(pos);

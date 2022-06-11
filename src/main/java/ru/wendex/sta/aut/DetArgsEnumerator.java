@@ -41,6 +41,7 @@ public class DetArgsEnumerator {
             if (e < p.get(j).size()) {
                 indices.set(j, e);
                 current.set(j, p.get(j).get(e));
+                return;
             }
             indices.set(j, 0);
             current.set(j, p.get(j).get(0));

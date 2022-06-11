@@ -55,6 +55,6 @@ public class FunctionReport {
         if (defRes != null)
             defRes.print();
         else
-            exception.printStackTrace();
+            System.out.println(exception.getMessage() + "\n");
     }
 }

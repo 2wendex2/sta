@@ -2,6 +2,7 @@ package ru.wendex.sta.typea;
 
 import org.junit.jupiter.api.Test;
 import ru.wendex.sta.adl.FunctionList;
+import ru.wendex.sta.adl.SemanticException;
 import ru.wendex.sta.aut.NotSupportedProcedureException;
 import ru.wendex.sta.langbase.ParserException;
 import ru.wendex.sta.langbase.Position;
@@ -15,7 +16,7 @@ import java.io.IOException;
 public class MatcherTest {
     @Test
     public void matcherTest() throws IOException, ParserException, ScmToAutException,
-            TypeMatcherException, NotSupportedProcedureException {
+            TypeMatcherException, NotSupportedProcedureException, SemanticException {
         FileReader fr1 = new FileReader("testfiles/scmmain.scm");
         Position pos1 = new Position(fr1);
         Lexer lexer1 = new Lexer(pos1);

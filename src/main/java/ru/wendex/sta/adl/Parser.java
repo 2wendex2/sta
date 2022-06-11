@@ -12,12 +12,12 @@ public class Parser {
 	private Lexer lexer;
 	private HashMap<String, Integer> arityMap = new HashMap<>();
 	private HashSet<String> functionSet = new HashSet<>();
-	
+
 	private Parser(Lexer lexer) throws IOException {
 		this.lexer = lexer;
 	}
 	
-	public static FunctionList parse(Lexer lexer) throws ParserException, IOException {
+	public static FunctionList parse(Lexer lexer) throws ParserException, IOException, SemanticException {
 		Parser parser = new Parser(lexer);
 		FunctionList lst = parser.parseFunctions();
 		if (lexer.peek().getTag() != Token.EOF) {
@@ -26,7 +26,7 @@ public class Parser {
 		return lst;
 	}
 	
-	private FunctionList parseFunctions() throws ParserException, IOException {
+	private FunctionList parseFunctions() throws ParserException, IOException, SemanticException {
 		ArrayList<Function> lst = new ArrayList<>();
 		for (;;) {
 			Token token = lexer.peek();
@@ -40,7 +40,7 @@ public class Parser {
 		return new FunctionList(lst);
 	}
 	
-	private Function parseFunction() throws ParserException, IOException {
+	private Function parseFunction() throws ParserException, IOException, SemanticException {
 		Token token = lexer.peek();
 		if (token.getTag() != Token.SCHEME_IDENT) {
 			throw new ParserException("Expected function name\n" + lexer.peek().toString());
@@ -48,7 +48,7 @@ public class Parser {
 		
 		String name = ((StringToken)token).getValue();
 		if (functionSet.contains(name))
-			throw new ParserException("duplicate function name");
+			throw new SemanticException("duplicate function name");
 		functionSet.add(name);
 		
 		lexer.next();

@@ -2,18 +2,16 @@
 
 def .flat-even from [
 	.a() -> a;
-	~null() -> a;
 	.b() -> b;
 	
-	'~null() -> lst;
+	~null() -> lst;
 	~pair(b, lst) -> tail;
 	~pair(a, tail) -> lst;
 	
 	~null() -> biglst;
 	~pair(lst, biglst) -> biglst;
 	
-	final biglst;'
-	final a;
+	final biglst;
 ] to [
 	.a() -> a;
 	.b() -> b;
@@ -24,3 +22,4 @@ def .flat-even from [
 	
 	final lst;
 ]
+

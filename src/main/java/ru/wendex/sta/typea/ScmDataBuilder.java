@@ -3,7 +3,6 @@ package ru.wendex.sta.typea;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import ru.wendex.sta.aut.Symbol;
 import ru.wendex.sta.scm.*;
 
 public class ScmDataBuilder {
@@ -56,7 +55,7 @@ public class ScmDataBuilder {
 		if (args instanceof SymbolNode) {
 			SymbolNode symbolNode = (SymbolNode)args;
 			String name = symbolNode.getValue();
-			if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDART_FUNCTIONS.contains(name)) {
+			if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDARD_FUNCTIONS.contains(name)) {
 				throw new ScmToAutException("Duplicate variable " + name);
 			}
 			vars.put(name, body);
@@ -69,7 +68,7 @@ public class ScmDataBuilder {
 		if (!(a instanceof SymbolNode))
 			throw new ScmToAutException("Incorrect function name");
 		String name = ((SymbolNode)a).getValue();
-		if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDART_FUNCTIONS.contains(name)) {
+		if (funcs.containsKey(name) || vars.containsKey(name) || ScmData.STANDARD_FUNCTIONS.contains(name)) {
 			throw new ScmToAutException("Duplicate function " + name);
 		}
 		ArrayList<String> as = procFunctionArgs(node.getCdr());
